@@ -1,0 +1,6 @@
+# Ignore all first-level files
+/*
+
+# Except the folders api/ and model/
+!api/
+!model/

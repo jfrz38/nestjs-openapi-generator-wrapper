@@ -1,0 +1,68 @@
+{{>licenseInfo}}
+/* tslint:disable:no-unused-variable member-ordering */
+
+import { Controller, Get, Post, Put, Delete, Patch, UsePipes, ValidationPipe, Body, Param, Query, Headers, Req, Res } from "@nestjs/common";
+import { Request, Response } from 'express';
+{{#imports}}
+import { {{classname}} } from '../{{filename}}';
+{{/imports}}
+
+{{#operations}}
+{{#description}}
+/**
+ * {{&description}}
+ */
+{{/description}}
+@Controller()
+@UsePipes(ValidationPipe)
+export abstract class {{classname}} {
+
+  {{#operations}}
+  {{#operation}}
+  protected abstract {{operationId}}({{#allParams}}{{paramName}}: {{{dataType}}}{{^required}} | undefined{{/required}}, {{/allParams}}request?: Request, response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+
+  {{/operation}}
+  {{/operations}}
+  
+  {{#operation}}
+    /**
+     * {{summary}}
+     * {{notes}}
+     {{#allParams}}
+     * @param {{paramName}} {{description}}
+     {{/allParams}}
+     */
+    @{{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}()
+    private do{{#lambda.pascalcase}}{{{operationId}}}{{/lambda.pascalcase}}({{#allParams}}{{#isPathParam}}@Param("{{baseName}}") {{/isPathParam}}{{#isQueryParam}}@Query("{{baseName}}") {{/isQueryParam}}{{#isHeaderParam}}@Headers("{{baseName}}") {{/isHeaderParam}}{{#isBodyParam}}@Body() {{/isBodyParam}}{{paramName}}: {{dataType}}{{^required}} | undefined{{/required}}, {{/allParams}}@Req() request?: Request, @Res({ passthrough: true }) response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+      {{#allParams}}
+      {{#required}}
+        {{#isConstEnumParam}}
+        let {{paramName}} = {{{dataType}}};
+        {{/isConstEnumParam}}
+        {{^isConstEnumParam}}
+        if ({{paramName}} === null || {{paramName}} === undefined) {
+            throw new Error('Required parameter {{paramName}} was null or undefined when calling {{nickname}}.');
+        }
+
+        {{/isConstEnumParam}}
+      {{/required}}
+      {{/allParams}}
+      return this.{{operationId}}({{#allParams}}{{paramName}}, {{/allParams}}request, response);
+    }
+
+  {{/operation}}
+}
+{{/operations}}
+
+/**
+* Path decorators to implement path automatically
+*/
+{{#operations}}
+{{#operation}}
+function {{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}(): MethodDecorator {
+    const path: string = "{{{path}}}".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
+    return {{#lambda.pascalcase}}{{{httpMethod}}}{{/lambda.pascalcase}}(path);
+}
+
+{{/operation}}
+{{/operations}}
