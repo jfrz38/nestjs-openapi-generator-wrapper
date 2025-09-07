@@ -3,21 +3,22 @@
 import { program } from 'commander';
 import { generate } from '../index';
 
+const ERROR_MESSAGE = 'Input spec (-i) and output dir (-o) are required'
+
 program
   .option('-i, --input <spec>', 'Path to OpenAPI spec')
   .option('-o, --output <dir>', 'Output directory')
   .option('-t, --templates <dir>', 'Template directory')
-  .option('-c, --config <file>', 'Config file')
   .option('--additional-properties <properties>', 'Additional properties')
-  .option('--global-property=<property>', 'Global property')
-  .option('--ignore-file-override=<ruta>', 'OpenApi ignore file path')
+  .option('--global-property <property>', 'Global property')
+  .option('--ignore-file-override <path>', 'OpenApi ignore file path')
 
 program.parse(process.argv);
 
 const options = program.opts();
 
 if (!options.input || !options.output) {
-  console.error('Input spec (-i) and output dir (-o) are required');
+  console.error(ERROR_MESSAGE);
   process.exit(1);
 }
 
@@ -26,5 +27,6 @@ generate({
   outputDir: options.output,
   templateDir: options.templates,
   additionalProperties: options.additionalProperties,
-  globalProperty: options.globalProperty
+  globalProperty: options.globalProperty,
+  generatorIgnoreFile: options.ignoreFileOverride
 });
