@@ -1,0 +1,37 @@
+import { 
+    IsBoolean,
+    IsDateString,
+    IsString,
+    IsOptional,
+    IsUUID,
+    IsNumber,
+    IsArray,
+    MinLength,
+    MaxLength,
+    Min,
+    Max,
+    IsEmail,
+    Matches,
+    ArrayMinSize,
+    ArrayMaxSize
+} from "class-validator";
+import { UUID } from "crypto";
+
+interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
+{{#vars}}
+    {{#description}}
+    /**
+     * {{{.}}}
+     */
+    {{/description}}
+    {{#isReadOnly}}readonly {{/isReadOnly}}{{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{^isUuid}}{{{dataType}}}{{/isUuid}}{{#isUuid}}UUID{{/isUuid}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}};
+{{/vars}}
+}{{>modelGenericEnums}}
+
+export class {{classname}} implements I{{classname}} {
+    {{#vars}}
+    {{#minLength}}@MinLength({{minLength}}) {{/minLength}}{{#maxLength}}@MaxLength({{maxLength}}) {{/maxLength}}{{^required}}@IsOptional() {{/required}}{{#isUuid}}@IsUUID() {{/isUuid}}{{#isString}}{{^isUuid}}@IsString() {{/isUuid}}{{/isString}}{{#isInteger}}@IsNumber() {{/isInteger}}{{#isBoolean}}@IsBoolean() {{/isBoolean}}{{#isArray}}{{^uniqueItems}}@IsArray() {{/uniqueItems}}{{/isArray}}{{#minimum}}@Min({{minimum}}) {{/minimum}}{{#maximum}}@Max({{maximum}}) {{/maximum}}{{#isDateTime}}@IsDateString() {{/isDateTime}}{{#isEmail}}@IsEmail() {{/isEmail}}{{#pattern}}@Matches({{pattern}}) {{/pattern}}{{#minItems}}@ArrayMinSize({{minItems}}) {{/minItems}}{{#maxItems}}@ArrayMaxSize({{maxItems}}) {{/maxItems}}
+    readonly {{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{^isUuid}}{{{dataType}}}{{/isUuid}}{{#isUuid}}UUID{{/isUuid}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}};
+
+{{/vars}}
+}
