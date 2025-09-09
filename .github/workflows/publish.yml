@@ -24,6 +24,10 @@ jobs:
           scope: '@jfrz38'
       - name: Install dependencies
         run: npm ci
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@jfrz38:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
       - name: Publish package
         # run: npm publish
         run: npm publish --tag develop
