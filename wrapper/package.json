@@ -1,6 +1,6 @@
 {
   "name": "@jfrz38/nestjs-open-api-generator-wrapper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Wrapper for OpenAPI Generator that produces a custom, opinionated code structure with predefined templates and configurations.",
   "repository": {
     "url": "https://github.com/jfrz38/nestjs-openapi-generator-wrapper.git"
