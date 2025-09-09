@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { program } from 'commander';
+import { Command } from 'commander';
 import { generate } from '../index';
 
 const ERROR_MESSAGE = 'Input spec (-i) and output dir (-o) are required'
+const program = new Command();
 
 program
   .option('-i, --input <spec>', 'Path to OpenAPI spec')
