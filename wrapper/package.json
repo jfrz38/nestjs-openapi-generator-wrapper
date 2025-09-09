@@ -8,11 +8,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "nestjs-openapi-wrapper": "./dist/bin/generate.js"
+    "nestjs-openapi-wrapper": "./dist/src/bin/generate.js"
   },
   "scripts": {
     "build": "tsc",
-    "generate": "node ./dist/bin/generate.js",
+    "generate": "node ./dist/src/bin/generate.js",
     "prepare": "npm run build",
     "test": "jest"
   },
