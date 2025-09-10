@@ -1,6 +1,6 @@
 # Generation example
 
-This code has been generated using the following command from the project root folder (where `package.json` exists):
+This code from [`generated` folder](./generated/) has been generated using the following command from the project root folder (where `package.json` exists):
 
 ```bash
 npx @jfrz38/nestjs-open-api-generator-wrapper \
@@ -25,7 +25,9 @@ import { UserDto } from './some/path/to/generated/model/user.dto';
 @Injectable()
 export class MyUserController extends UsersApi {
 
-    constructor() { super(); }
+    constructor() {
+        super();
+    }
 
     protected getUsers(): Array<UserDto> {
         return ...
@@ -74,7 +76,7 @@ export class MyUserController extends UsersApi {
         super();
     }
     
-    // and also you can use your own annotations but with a boilerplate *
+    // and also you can use your own annotations but with a boilerplate*
     @HasPermission([Permission.CREATE_AUTHOR])
     protected getUsers(): Array<UserDto> {
         const users = useCase.dispatch();

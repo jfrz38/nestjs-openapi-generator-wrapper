@@ -1,8 +1,8 @@
 # OpenAPI Custom Wrapper
 
-An **opinionated wrapper** around [`openapi-generator`](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) for generating TypeScript code to be implemented in NestJS applications using a folder and class structure closer to what I use to use, inspired by Java and Spring Boot-style patterns.
+An **opinionated wrapper** around [`openapi-generator`](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) for generating TypeScript code to be implemented in NestJS applications using a class and folder structure closer to what I use to use, inspired by Java and Spring Boot-style patterns.
 
-> ⚠️ This project reflects my personal opinion on how `Dto` classes and controllers should be generated. It is not meant to be a universal solution or to replace the standard behavior of openapi-generator.
+> ⚠️ This project reflects my personal opinion on how `Dto` classes and controllers could  be generated. It is not meant to be a universal solution or to replace the standard behavior of openapi-generator.
 
 ## Main Features
 
@@ -107,7 +107,7 @@ Complete code generation and a bigger explanation is into [example folder](./exa
 
 ## Using in production
 
-To avoid boilerplate the easiest way is to use predefined generator tool with your parameters. If any parameter is used to generate your development code, then you can uso predefined command. Otherwise just replace desire flag with your custom parameter.
+To avoid boilerplate the easiest way is to use predefined generator tool with your parameters. If any parameter is used to generate your development code, then you can use predefined command. Otherwise just replace desire flag with your custom parameter.
 
 > ⚠️ Note that OpenApi generator uses Java so it can't be used directly.
 
