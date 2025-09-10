@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: Simple API Example
+  version: 1.0.0
+  description: Minimal OpenAPI spec with one GET (users) and one POST (products)
+
+servers:
+  - url: http://localhost:3000/api
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users
+      operationId: getUsers
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /products:
+    post:
+      tags: [Products]
+      summary: Create a new product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewProduct"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    NewProduct:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+      
