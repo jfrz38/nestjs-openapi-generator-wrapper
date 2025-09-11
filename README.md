@@ -1,5 +1,7 @@
 # OpenAPI Custom Wrapper
 
+![npm](https://img.shields.io/npm/v/@jfrz38/nestjs-open-api-generator-wrapper) ![license](https://img.shields.io/npm/l/@jfrz38/nestjs-open-api-generator-wrapper)
+
 An **opinionated wrapper** around [`openapi-generator`](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) for generating TypeScript code to be implemented in NestJS applications using a class and folder structure closer to what I use to use, inspired by Java and Spring Boot-style patterns.
 
 > ⚠️ This project reflects my personal opinion on how `Dto` classes and controllers could  be generated. It is not meant to be a universal solution or to replace the standard behavior of openapi-generator.
