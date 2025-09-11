@@ -85,7 +85,7 @@ Coming from a `Spring Boot–style mindset`, I missed having a strict contract e
 The main goal of this project is to increase development safety by relying on generated code as much as possible.  
 More importantly, it enforces a clear **separation of concerns**: application logic stays in your codebase, while all external-facing contracts (controllers, DTOs, validation rules) are generated from OpenAPI.
 
-The generated structure (explained in detail with code in [examples](./example)) allow to apply a **Clean Architecture** approach: place DTOs and Controllers in the `infrastructure` layer, and simply map them to your application models where needed.
+The generated structure (explained in detail with code in [examples](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example)) allow to apply a **Clean Architecture** approach: place DTOs and Controllers in the `infrastructure` layer, and simply map them to your application models where needed.
 
 ## Generated Folder Structure
 
@@ -103,7 +103,7 @@ Generated folder structure is not as clean as could be but as it is auto-generat
 
 ## Generation example
 
-Complete code generation and a bigger explanation is into [example folder](./example/README.md)
+Complete code generation and a bigger explanation is into [example folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example)
 
 ## Using in production
 
@@ -143,4 +143,4 @@ ENV NODE_ENV=production
 CMD ["npm", "run", "start:prod"]
 ```
 
-Custom templates used by default can be found [here](./wrapper/src/templates/)
+Custom templates used by default can be found [here](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/wrapper/src/templates)

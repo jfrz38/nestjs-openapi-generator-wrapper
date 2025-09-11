@@ -1,6 +1,6 @@
 # Generation example
 
-This code from [`generated` folder](./generated/) has been generated using the following command from the project root folder (where `package.json` exists):
+This code from [`generated` folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example/generated) has been generated using the following command from the project root folder (where `package.json` exists):
 
 ```bash
 npx @jfrz38/nestjs-open-api-generator-wrapper \
