@@ -30,12 +30,14 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
     execSync(cmdArguments.join(' '), { stdio: 'inherit' });
 }
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
+    if (!existsSync(outputDir)) return;
+
     if (!isCleanOutputEnabled) {
-        if (existsSync(outputDir)) {
-            console.warn(`Output directory '${outputDir}' already exists. To overwrite, enable '--clean-output' option.`);
-        }
+        console.warn(`Output directory '${outputDir}' already exists. To overwrite, enable '--clean-output' option.`);
         return;
     }
+
     execSync(`rm -r ${outputDir}`);
+
 }
 

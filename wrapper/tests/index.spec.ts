@@ -32,43 +32,35 @@ describe('generate', () => {
         jest.clearAllMocks();
     });
 
-    it('when all options enabled should call DefaultConfig with correct options', () => {
-        const requiredOptions: RequiredOptions = {
-            specPath: 'spec.yaml',
-            outputDir: 'dist/output',
-        };
-        const optionalOptions: OptionalOptions = {
-            templateDir: 'tpl',
-            additionalProperties: 'ap',
-            globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file',
-            isCleanOutputEnabled: false
-        };
-
-        generate(requiredOptions, optionalOptions);
-
-        expect(DefaultConfig).toHaveBeenCalledWith({
-            templateDir: 'tpl',
-            additionalProperties: 'ap',
-            globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file',
-            isCleanOutputEnabled: false
-        });
-    });
-
-    it('when all flags used should call execSync with expected command', () => {
+    it('when all flags used should call DefaultConfig and execSync with expected command', () => {
         const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output'
         };
 
-        generate(requiredOptions);
+        const optionalOptions: OptionalOptions = {
+            templateDir: 'tpl',
+            additionalProperties: 'ap',
+            globalProperty: 'gp',
+            generatorIgnoreFile: 'ignore-file',
+            isCleanOutputEnabled: true
+        };
+        (existsSync as jest.Mock).mockReturnValue(true);
 
-        expect(existsSync).not.toHaveBeenCalled();
+        generate(requiredOptions, optionalOptions);
+
+        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
         expect(execSync).toHaveBeenCalledTimes(2);
         expect(execSync).toHaveBeenCalledWith(
             expect.stringContaining('rm -r dist/output')
         );
+        expect(DefaultConfig).toHaveBeenCalledWith({
+            templateDir: 'tpl',
+            additionalProperties: 'ap',
+            globalProperty: 'gp',
+            generatorIgnoreFile: 'ignore-file',
+            isCleanOutputEnabled: true
+        });
 
         const cmd = (execSync as jest.Mock).mock.calls[1][0];
 
