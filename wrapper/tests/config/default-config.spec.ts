@@ -70,4 +70,18 @@ describe('DefaultConfig', () => {
         expect(config.isCleanOutputEnabled).toBe(true);
     });
 
+    it('when some options are provided, others should use defaults', () => {
+        const options: OptionalOptions = {
+            additionalProperties: 'ap',
+            isCleanOutputEnabled: true,
+        }
+        const config = new DefaultConfig(options);
+
+        expect(config.additionalProperties).toBe('ap');
+        expect(config.isCleanOutputEnabled).toBe(true);
+        expect(config.templateDir).toBe(config['DEFAULTS'].templateDir);
+        expect(config.globalProperty).toBe(config['DEFAULTS'].globalProperty);
+        expect(config.generatorIgnoreFile).toBe(config['DEFAULTS'].generatorIgnoreFile);
+    });
+
 });
