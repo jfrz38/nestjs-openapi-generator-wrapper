@@ -54,7 +54,7 @@ npx @jfrz38/nestjs-open-api-generator-wrapper \
 -o ./dist/generated/src
 ```
 
-> ⚠️ Take care because the program remove the output (`-o`) folder to create a clean generation.
+> ⚠️ **Caution**. The program may remove the output (`-o`) folder to create a clean generation. Default behavior is to **no** overwrite (`--remove-output-dir` is `false`). Overwriting is recommended in production, but be careful not to delete important folders during development.
 
 Allowed parameters are:
 
@@ -66,6 +66,7 @@ Allowed parameters are:
 | `--additional-properties <properties>` | Pass additional properties to the generator | No        | `modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api`               |
 | `--global-property <property>`         | Set global properties for code generation   | No        | `apis,models`               |
 | `--ignore-file-override <path>`        | Path to an OpenAPI ignore file              | No        | `.openapi-generator-ignore`               |
+| `--clean-output`                         | Remove the output directory if it exists    | No       | `false` |
 
 Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
 

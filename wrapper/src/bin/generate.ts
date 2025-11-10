@@ -13,6 +13,7 @@ program
   .option('--additional-properties <properties>', 'Additional properties')
   .option('--global-property <property>', 'Global property')
   .option('--ignore-file-override <path>', 'OpenApi ignore file path')
+  .option('--clean-output', 'Remove the output directory if it exists');
 
 program.parse(process.argv);
 
@@ -29,5 +30,6 @@ generate({
   templateDir: options.templates,
   additionalProperties: options.additionalProperties,
   globalProperty: options.globalProperty,
-  generatorIgnoreFile: options.ignoreFileOverride
+  generatorIgnoreFile: options.ignoreFileOverride,
+  cleanOutput: options.cleanOutput
 });

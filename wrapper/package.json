@@ -15,7 +15,8 @@
     "copy-templates": "copyfiles -u 1 src/**/*.mustache dist/src",
     "generate": "node ./dist/src/bin/generate.js",
     "prepare": "npm run build",
-    "test": "jest"
+    "test": "jest",
+    "test-coverage": "jest --coverage"
   },
   "keywords": [
     "openapi",
