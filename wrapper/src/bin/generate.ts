@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { generate } from '../index';
+import { OptionalOptions, RequiredOptions } from '../types/types';
 
 const ERROR_MESSAGE = 'Input spec (-i) and output dir (-o) are required'
 const program = new Command();
@@ -13,6 +14,7 @@ program
   .option('--additional-properties <properties>', 'Additional properties')
   .option('--global-property <property>', 'Global property')
   .option('--ignore-file-override <path>', 'OpenApi ignore file path')
+  .option('--clean-output', 'Remove and overwrite the output directory');
 
 program.parse(process.argv);
 
@@ -23,11 +25,16 @@ if (!options.input || !options.output) {
   process.exit(1);
 }
 
-generate({
+const requiredOptions: RequiredOptions = {
   specPath: options.input,
   outputDir: options.output,
+};
+const optionalOptions: OptionalOptions = {
   templateDir: options.templates,
   additionalProperties: options.additionalProperties,
   globalProperty: options.globalProperty,
-  generatorIgnoreFile: options.ignoreFileOverride
-});
+  generatorIgnoreFile: options.ignoreFileOverride,
+  isCleanOutputEnabled: options.cleanOutput
+};
+
+generate(requiredOptions, optionalOptions);

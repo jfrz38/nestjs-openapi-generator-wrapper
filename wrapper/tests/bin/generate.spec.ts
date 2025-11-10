@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { OptionalOptions, RequiredOptions } from '../../src/types/types';
 
 jest.mock('../../src/index', () => ({
     generate: jest.fn(),
@@ -26,6 +27,7 @@ describe('CLI', () => {
         const additionalProperties = 'ap';
         const globalProperty = 'gp';
         const generatorIgnoreFile = 'gif';
+        const isCleanOutputEnabled = true;
 
         process.argv.push(
             '-i', specPath,
@@ -33,19 +35,24 @@ describe('CLI', () => {
             '-t', templateDir,
             '--additional-properties', additionalProperties,
             '--global-property', globalProperty,
-            '--ignore-file-override', generatorIgnoreFile
+            '--ignore-file-override', generatorIgnoreFile,
+            '--clean-output'
         );
 
         require('../../src/bin/generate');
 
-        expect(generate).toHaveBeenCalledWith({
+        const expectedRequiredOptions: RequiredOptions = {
             specPath,
-            outputDir,
+            outputDir
+        }
+        const expectedOptionalOptions: OptionalOptions = {
             templateDir,
             additionalProperties,
             globalProperty,
-            generatorIgnoreFile
-        });
+            generatorIgnoreFile,
+            isCleanOutputEnabled
+        }
+        expect(generate).toHaveBeenNthCalledWith(1, expectedRequiredOptions, expectedOptionalOptions);
     });
 
     it('exits if required options are missing', () => {
