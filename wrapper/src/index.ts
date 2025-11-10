@@ -6,12 +6,12 @@ import { OptionalOptions, RequiredOptions } from './types/types';
 export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: OptionalOptions) {
     const { specPath, outputDir } = mandatoryOptions;
     const {
-        templateDir: templates,
-        additionalProperties: additionalProps,
-        globalProperty: globalProp,
-        generatorIgnoreFile: ignoreFile,
+        templateDir,
+        additionalProperties,
+        globalProperty,
+        generatorIgnoreFile,
         isCleanOutputEnabled
-    } = new DefaultConfig(optionalOptions);
+    }: Required<OptionalOptions> = new DefaultConfig(optionalOptions);
 
 
     evaluateConfigs(outputDir, isCleanOutputEnabled);
@@ -21,10 +21,10 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
         `-i ${specPath}`,
         `-g typescript-nestjs`,
         `-o ${outputDir}`,
-        `-t ${templates}`,
-        `--additional-properties=${additionalProps}`,
-        `--global-property=${globalProp}`,
-        `--ignore-file-override=${ignoreFile}`
+        `-t ${templateDir}`,
+        `--additional-properties=${additionalProperties}`,
+        `--global-property=${globalProperty}`,
+        `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
     execSync(cmdArguments.join(' '), { stdio: 'inherit' });

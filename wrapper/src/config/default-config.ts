@@ -17,8 +17,15 @@ export class DefaultConfig {
     readonly generatorIgnoreFile: string;
     readonly isCleanOutputEnabled: boolean;
 
-    constructor(opts: OptionalOptions = {}) {
-        const configOptions = { ...this.DEFAULTS, ...opts };
+    constructor(options: OptionalOptions = {}) {
+        const configOptions: Required<OptionalOptions> = {
+            templateDir: options.templateDir ?? this.DEFAULTS.templateDir,
+            additionalProperties: options.additionalProperties ?? this.DEFAULTS.additionalProperties,
+            globalProperty: options.globalProperty ?? this.DEFAULTS.globalProperty,
+            generatorIgnoreFile: options.generatorIgnoreFile ?? this.DEFAULTS.generatorIgnoreFile,
+            isCleanOutputEnabled: options.isCleanOutputEnabled ?? this.DEFAULTS.isCleanOutputEnabled
+        };
+
         this.templateDir = configOptions.templateDir;
         this.additionalProperties = configOptions.additionalProperties;
         this.globalProperty = configOptions.globalProperty;
