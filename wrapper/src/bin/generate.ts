@@ -14,7 +14,7 @@ program
   .option('--additional-properties <properties>', 'Additional properties')
   .option('--global-property <property>', 'Global property')
   .option('--ignore-file-override <path>', 'OpenApi ignore file path')
-  .option('--clean-output', 'Remove the output directory if it exists');
+  .option('--clean-output', 'Remove and overwrite the output directory');
 
 program.parse(process.argv);
 

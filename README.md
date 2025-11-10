@@ -66,7 +66,7 @@ Allowed parameters are:
 | `--additional-properties <properties>` | Pass additional properties to the generator | No        | `modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api`               |
 | `--global-property <property>`         | Set global properties for code generation   | No        | `apis,models`               |
 | `--ignore-file-override <path>`        | Path to an OpenAPI ignore file              | No        | `.openapi-generator-ignore`               |
-| `--clean-output`                         | Remove the output directory if it exists    | No       | `false` |
+| `--clean-output`                         | Remove and overwrite the output directory    | No       | `false` |
 
 Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
 
