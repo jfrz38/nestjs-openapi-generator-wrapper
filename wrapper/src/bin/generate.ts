@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { generate } from '../index';
+import { OptionalOptions, RequiredOptions } from '../types/types';
 
 const ERROR_MESSAGE = 'Input spec (-i) and output dir (-o) are required'
 const program = new Command();
@@ -24,12 +25,16 @@ if (!options.input || !options.output) {
   process.exit(1);
 }
 
-generate({
+const requiredOptions: RequiredOptions = {
   specPath: options.input,
   outputDir: options.output,
+};
+const optionalOptions: OptionalOptions = {
   templateDir: options.templates,
   additionalProperties: options.additionalProperties,
   globalProperty: options.globalProperty,
   generatorIgnoreFile: options.ignoreFileOverride,
-  cleanOutput: options.cleanOutput
-});
+  isCleanOutputEnabled: options.cleanOutput
+};
+
+generate(requiredOptions, optionalOptions);

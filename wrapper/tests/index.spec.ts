@@ -7,14 +7,15 @@ jest.mock('child_process', () => ({
 }));
 
 jest.mock('../src/config/default-config', () => {
+    const config: OptionalOptions = {
+        templateDir: 'mock-templates',
+        additionalProperties: 'mock-additional',
+        globalProperty: 'mock-global',
+        generatorIgnoreFile: 'mock-ignore-file',
+        isCleanOutputEnabled: true
+    }
     return {
-        DefaultConfig: jest.fn().mockImplementation(() => ({
-            templates: 'mock-templates',
-            additionalProps: 'mock-additional',
-            globalProp: 'mock-global',
-            ignoreFile: 'mock-ignore-file',
-            isCleanOutputEnabled: true
-        }))
+        DefaultConfig: jest.fn().mockImplementation(() => (config))
     };
 });
 
@@ -24,6 +25,7 @@ jest.mock('fs', () => ({
 
 import { execSync } from 'child_process';
 import { DefaultConfig } from '../src/config/default-config';
+import { OptionalOptions, RequiredOptions } from '../src/types/types';
 
 describe('generate', () => {
     beforeEach(() => {
@@ -31,34 +33,36 @@ describe('generate', () => {
     });
 
     it('when all options enabled should call DefaultConfig with correct options', () => {
-        const options = {
+        const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output',
+        };
+        const optionalOptions: OptionalOptions = {
             templateDir: 'tpl',
             additionalProperties: 'ap',
             globalProperty: 'gp',
             generatorIgnoreFile: 'ignore-file',
-            cleanOutput: false
+            isCleanOutputEnabled: false
         };
 
-        generate(options);
+        generate(requiredOptions, optionalOptions);
 
         expect(DefaultConfig).toHaveBeenCalledWith({
             templateDir: 'tpl',
             additionalProperties: 'ap',
             globalProperty: 'gp',
             generatorIgnoreFile: 'ignore-file',
-            cleanOutput: false
+            isCleanOutputEnabled: false
         });
     });
 
     it('when all flags used should call execSync with expected command', () => {
-        const options = {
+        const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output'
         };
 
-        generate(options);
+        generate(requiredOptions);
 
         expect(existsSync).not.toHaveBeenCalled();
         expect(execSync).toHaveBeenCalledTimes(2);
@@ -83,12 +87,12 @@ describe('generate', () => {
         }));
         (existsSync as jest.Mock).mockReturnValue(false);
 
-        const options = {
+        const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output'
         };
 
-        generate(options);
+        generate(requiredOptions);
 
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
         expect(execSync).toHaveBeenCalledTimes(1);

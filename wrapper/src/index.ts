@@ -1,29 +1,18 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { DefaultConfig } from './config/default-config';
+import { OptionalOptions, RequiredOptions } from './types/types';
 
-export function generate({ specPath, outputDir, templateDir, additionalProperties, globalProperty, generatorIgnoreFile, cleanOutput }: {
-    specPath: string;
-    outputDir: string;
-    templateDir?: string;
-    additionalProperties?: string
-    globalProperty?: string,
-    generatorIgnoreFile?: string,
-    cleanOutput?: boolean
-}) {
+export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: OptionalOptions) {
+    const { specPath, outputDir } = mandatoryOptions;
     const {
-        templates,
-        additionalProps,
-        globalProp,
-        ignoreFile,
+        templateDir: templates,
+        additionalProperties: additionalProps,
+        globalProperty: globalProp,
+        generatorIgnoreFile: ignoreFile,
         isCleanOutputEnabled
-    } = new DefaultConfig({
-        templateDir,
-        additionalProperties,
-        globalProperty,
-        generatorIgnoreFile,
-        cleanOutput
-    })
+    } = new DefaultConfig(optionalOptions);
+
 
     evaluateConfigs(outputDir, isCleanOutputEnabled);
 
