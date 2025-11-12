@@ -1,6 +1,6 @@
 {
   "name": "@jfrz38/nestjs-open-api-generator-wrapper",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Wrapper for OpenAPI Generator that produces a custom, opinionated code structure with predefined templates and configurations.",
   "repository": {
     "url": "https://github.com/jfrz38/nestjs-openapi-generator-wrapper.git"
@@ -15,7 +15,8 @@
     "copy-templates": "copyfiles -u 1 src/**/*.mustache dist/src",
     "generate": "node ./dist/src/bin/generate.js",
     "prepare": "npm run build",
-    "test": "jest"
+    "test": "jest",
+    "test-coverage": "jest --coverage"
   },
   "keywords": [
     "openapi",
@@ -27,15 +28,15 @@
   "author": "José F. Ruiz Zamora <jrz899@inlumine.ual.es>",
   "license": "MIT",
   "dependencies": {
-    "@openapitools/openapi-generator-cli": "^2.23.1"
+    "@openapitools/openapi-generator-cli": "2.25.0"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.3.1",
-    "copyfiles": "^2.4.1",
-    "jest": "^30.1.3",
-    "ts-jest": "^29.4.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "@types/jest": "30.0.0",
+    "@types/node": "24.10.0",
+    "copyfiles": "2.4.1",
+    "jest": "30.2.0",
+    "ts-jest": "29.4.5",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
   }
 }

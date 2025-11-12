@@ -1,50 +1,108 @@
 import { jest } from '@jest/globals';
 import { generate } from '../src/index';
+import { existsSync } from 'fs';
 
 jest.mock('child_process', () => ({
     execSync: jest.fn()
 }));
 
 jest.mock('../src/config/default-config', () => {
+    const config: OptionalOptions = {
+        templateDir: 'mock-templates',
+        additionalProperties: 'mock-additional',
+        globalProperty: 'mock-global',
+        generatorIgnoreFile: 'mock-ignore-file',
+        isCleanOutputEnabled: true
+    }
     return {
-        DefaultConfig: jest.fn().mockImplementation(() => ({
-            templates: 'mock-templates',
-            additionalProps: 'mock-additional',
-            globalProp: 'mock-global',
-            ignoreFile: 'mock-ignore-file'
-        }))
+        DefaultConfig: jest.fn().mockImplementation(() => (config))
     };
 });
 
+jest.mock('fs', () => ({
+    existsSync: jest.fn()
+}));
+
 import { execSync } from 'child_process';
 import { DefaultConfig } from '../src/config/default-config';
+import { OptionalOptions, RequiredOptions } from '../src/types/types';
 
 describe('generate', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it('should call DefaultConfig with correct options', () => {
-        const options = {
+    it('when all flags used should call DefaultConfig and execSync with expected command', () => {
+        const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
-            outputDir: 'dist/output',
+            outputDir: 'dist/output'
+        };
+
+        const optionalOptions: OptionalOptions = {
             templateDir: 'tpl',
             additionalProperties: 'ap',
             globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file'
+            generatorIgnoreFile: 'ignore-file',
+            isCleanOutputEnabled: true
         };
+        (existsSync as jest.Mock).mockReturnValue(true);
 
-        generate(options);
+        generate(requiredOptions, optionalOptions);
 
+        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
+        expect(execSync).toHaveBeenCalledTimes(2);
+        expect(execSync).toHaveBeenCalledWith(
+            expect.stringContaining('rm -r dist/output')
+        );
         expect(DefaultConfig).toHaveBeenCalledWith({
             templateDir: 'tpl',
             additionalProperties: 'ap',
             globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file'
+            generatorIgnoreFile: 'ignore-file',
+            isCleanOutputEnabled: true
         });
+
+        const cmd = (execSync as jest.Mock).mock.calls[1][0];
+
+        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
+        expect(cmd).toContain('-i spec.yaml');
+        expect(cmd).toContain('-o dist/output');
+        expect(cmd).toContain('-t mock-templates');
+        expect(cmd).toContain('--additional-properties=mock-additional');
+        expect(cmd).toContain('--global-property=mock-global');
+        expect(cmd).toContain('--ignore-file-override=mock-ignore-file');
     });
 
-    it('should call execSync with correct command', () => {
+    it('when cleanOutput is not enabled and output directory not exists should not call rm command before generation', () => {
+        (DefaultConfig as jest.Mock).mockImplementationOnce(() => ({
+            isCleanOutputEnabled: false
+        }));
+        (existsSync as jest.Mock).mockReturnValue(false);
+
+        const requiredOptions: RequiredOptions = {
+            specPath: 'spec.yaml',
+            outputDir: 'dist/output'
+        };
+
+        generate(requiredOptions);
+
+        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
+        expect(execSync).toHaveBeenCalledTimes(1);
+
+        const cmd = (execSync as jest.Mock).mock.calls[0][0];
+
+        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
+        expect(cmd).toContain('-i spec.yaml');
+        expect(cmd).toContain('-o dist/output');
+    });
+
+    it('when cleanOutput is not enabled and output directory exists should not call rm command before generation', () => {
+        (DefaultConfig as jest.Mock).mockImplementationOnce(() => ({
+            isCleanOutputEnabled: false
+        }));
+        (existsSync as jest.Mock).mockReturnValue(true);
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation((() => { }));
+
         const options = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output'
@@ -52,15 +110,16 @@ describe('generate', () => {
 
         generate(options);
 
+        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
         expect(execSync).toHaveBeenCalledTimes(1);
+        expect(consoleSpy).toHaveBeenNthCalledWith(1, expect.stringContaining(`Output directory 'dist/output' already exists`));
+
         const cmd = (execSync as jest.Mock).mock.calls[0][0];
 
-        expect(cmd).toContain('rm -r dist/output && npx @openapitools/openapi-generator-cli generate');
+        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
         expect(cmd).toContain('-i spec.yaml');
         expect(cmd).toContain('-o dist/output');
-        expect(cmd).toContain('-t mock-templates');
-        expect(cmd).toContain('--additional-properties=mock-additional');
-        expect(cmd).toContain('--global-property=mock-global');
-        expect(cmd).toContain('--ignore-file-override=mock-ignore-file');
+
+        consoleSpy.mockRestore();
     });
 });

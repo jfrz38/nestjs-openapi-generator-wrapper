@@ -1,32 +1,35 @@
 import path from "path";
+import { OptionalOptions } from "../types/types";
 
 export class DefaultConfig {
-    private readonly DEFAULT_TEMPLATES = path.resolve(__dirname, '..', 'templates');
-    private readonly DEFAULT_ADDITIONAL_PROPERTIES = "modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api";
-    private readonly DEFAULT_GLOBAL_PROPERTY = "apis,models";
-    private readonly DEFAULT_GENERATOR_IGNORE_FILE = path.resolve(__dirname, '.openapi-generator-ignore');
 
-    readonly templates: string
-    readonly additionalProps: string;
-    readonly globalProp: string;
-    readonly ignoreFile: string
+    private readonly DEFAULTS: Required<OptionalOptions> = {
+        templateDir: path.resolve(__dirname, '..', 'templates'),
+        additionalProperties: "modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api",
+        globalProperty: "apis,models",
+        generatorIgnoreFile: path.resolve(__dirname, '.openapi-generator-ignore'),
+        isCleanOutputEnabled: false
+    }
 
-    constructor(options: {
-        templateDir?: string,
-        additionalProperties?: string,
-        globalProperty?: string,
-        generatorIgnoreFile?: string
-    }) {
-        const {
-            templateDir = this.DEFAULT_TEMPLATES,
-            additionalProperties = this.DEFAULT_ADDITIONAL_PROPERTIES,
-            globalProperty = this.DEFAULT_GLOBAL_PROPERTY,
-            generatorIgnoreFile = this.DEFAULT_GENERATOR_IGNORE_FILE
-        } = options;
+    readonly templateDir: string;
+    readonly additionalProperties: string;
+    readonly globalProperty: string;
+    readonly generatorIgnoreFile: string;
+    readonly isCleanOutputEnabled: boolean;
 
-        this.templates = templateDir;
-        this.additionalProps = additionalProperties;
-        this.globalProp = globalProperty;
-        this.ignoreFile = generatorIgnoreFile;
+    constructor(options: OptionalOptions = {}) {
+        const configOptions: Required<OptionalOptions> = {
+            templateDir: options.templateDir ?? this.DEFAULTS.templateDir,
+            additionalProperties: options.additionalProperties ?? this.DEFAULTS.additionalProperties,
+            globalProperty: options.globalProperty ?? this.DEFAULTS.globalProperty,
+            generatorIgnoreFile: options.generatorIgnoreFile ?? this.DEFAULTS.generatorIgnoreFile,
+            isCleanOutputEnabled: options.isCleanOutputEnabled ?? this.DEFAULTS.isCleanOutputEnabled
+        };
+
+        this.templateDir = configOptions.templateDir;
+        this.additionalProperties = configOptions.additionalProperties;
+        this.globalProperty = configOptions.globalProperty;
+        this.generatorIgnoreFile = configOptions.generatorIgnoreFile;
+        this.isCleanOutputEnabled = configOptions.isCleanOutputEnabled;
     }
 }

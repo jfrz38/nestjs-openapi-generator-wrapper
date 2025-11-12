@@ -1,32 +1,43 @@
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 import { DefaultConfig } from './config/default-config';
+import { OptionalOptions, RequiredOptions } from './types/types';
 
-export function generate({ specPath, outputDir, templateDir, additionalProperties, globalProperty, generatorIgnoreFile }: {
-    specPath: string;
-    outputDir: string;
-    templateDir?: string;
-    additionalProperties?: string
-    globalProperty?: string,
-    generatorIgnoreFile?: string
-}) {
+export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: OptionalOptions) {
+    const { specPath, outputDir } = mandatoryOptions;
     const {
-        templates,
-        additionalProps,
-        globalProp,
-        ignoreFile
-    } = new DefaultConfig({ templateDir, additionalProperties, globalProperty, generatorIgnoreFile })
+        templateDir,
+        additionalProperties,
+        globalProperty,
+        generatorIgnoreFile,
+        isCleanOutputEnabled
+    }: Required<OptionalOptions> = new DefaultConfig(optionalOptions);
+
+
+    evaluateConfigs(outputDir, isCleanOutputEnabled);
 
     const cmdArguments = [
-        `rm -r ${outputDir} && npx @openapitools/openapi-generator-cli generate`,
+        `npx @openapitools/openapi-generator-cli generate`,
         `-i ${specPath}`,
         `-g typescript-nestjs`,
         `-o ${outputDir}`,
-        `-t ${templates}`,
-        `--additional-properties=${additionalProps}`,
-        `--global-property=${globalProp}`,
-        `--ignore-file-override=${ignoreFile}`
+        `-t ${templateDir}`,
+        `--additional-properties=${additionalProperties}`,
+        `--global-property=${globalProperty}`,
+        `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
     execSync(cmdArguments.join(' '), { stdio: 'inherit' });
+}
+function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
+    if (!existsSync(outputDir)) return;
+
+    if (!isCleanOutputEnabled) {
+        console.warn(`Output directory '${outputDir}' already exists. To overwrite, enable '--clean-output' option.`);
+        return;
+    }
+
+    execSync(`rm -r ${outputDir}`);
+
 }
 
