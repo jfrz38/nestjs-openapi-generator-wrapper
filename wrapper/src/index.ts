@@ -29,6 +29,7 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
 
     execSync(cmdArguments.join(' '), { stdio: 'inherit' });
 }
+
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
     if (!existsSync(outputDir)) return;
 
