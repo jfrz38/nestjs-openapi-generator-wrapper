@@ -19,8 +19,8 @@ To use this code in a NestJS application, just extend the generated controller i
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { UserApi } from './some/path/to/generated/api/users.api';
-import { UserDto } from './some/path/to/generated/model/user.dto';
+import { UserApi } from '../some/path/to/generated/api/users.api';
+import { UserDto } from '../some/path/to/generated/model/user.dto';
 
 @Injectable()
 export class MyUserController extends UsersApi {
@@ -44,10 +44,10 @@ export class UsersModule { }
 
 Notes about [**generated controllers**](./generated/api/products.api.ts):
 
-- Controllers exposes **abstract classes** that you must implement, ensuring signatures always match the OpenAPI spec.
-- Controllers **automatically generate the routes**, so you don’t need to decorate each method with the corresponding path. Your entire application entry-point is defined by open-api and can't be implemented using a wrong path.
-- Controllers enforce **required fields** so they can never be `null` neither `undefined`.
-- Controller use NestJS `ValidationPipe` so models are validated when they are created.
+- Controllers expose **abstract classes** that you must implement, ensuring signatures always match the OpenAPI spec.
+- Controllers **automatically generate the routes**, so you don't need to decorate each method with the corresponding path. Your entire application entry-point is defined by OpenAPI and can't be implemented using a wrong path.
+- Controllers enforce **required fields** so they can never be neither `null` nor `undefined`.
+- Controllers use NestJS `ValidationPipe` so models are validated when they are created.
 - `Request` and `Response` are always optionals so there is no need to implement them if they are not going to be used.
 
 Notes about [**generated DTOs**](./generated/model/user.dto.ts):
@@ -91,7 +91,7 @@ At this point, your only task is to map from the "external structure" (DTO) to t
 
 > \*Because NestJS relies on class metadata for some decorators, you might occasionally need to create your own metadata, since `@Controller` metadata does not exist on this class.
 
-This is an example to add a customer decorator for your controller:
+This is an example to add a custom decorator for your controller:
 
 <details>
 
@@ -118,5 +118,57 @@ export function YourDecoratorName(customValue: any): MethodDecorator {
     // do whatever you want with this if necessary
   };
 }
-
 ```
+
+</details>
+
+## How generated controllers work internally
+
+Each generated `*.api.ts` file is a **real NestJS controller**, made abstract on purpose.
+
+The abstract methods define the business contract you must implement,
+while the concrete methods handle **all HTTP-related concerns**.
+
+```ts
+@Controller()
+@UsePipes(ValidationPipe)
+export abstract class UsersApi {
+
+  protected abstract getUsers(request?: Request, response?: Response): Array<UserDto> | Promise<Array<UserDto>>;
+  
+    /**
+     * Get all users
+     * 
+     */
+    @GetUsersPath()
+    private doGetUsers(@Req() request?: Request, @Res({ passthrough: true }) response?: Response): Array<UserDto> | Promise<Array<UserDto>> {
+      return this.getUsers(request, response);
+    }
+
+}
+```
+
+What happens here:
+
+- `doGetUsers` is the **real HTTP handler**
+- It is automatically decorated with the correct path and HTTP verb
+- It delegates execution to the abstract `getUsers` method
+- Your implementation **never touches HTTP details**
+
+Generated files also include path decorators to keep routes fully aligned with the OpenAPI spec.
+
+```ts
+/**
+* Path decorators to implement path automatically
+*/
+function GetUsersPath(): MethodDecorator {
+    const path: string = "/users".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
+    return Get(path);
+}
+```
+
+This guarantees:
+
+- No manual routes
+- No accidental path mismatches
+- OpenAPI remains the single source of truth

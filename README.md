@@ -6,6 +6,40 @@ An **opinionated wrapper** around [`openapi-generator`](https://www.npmjs.com/pa
 
 > ⚠️ This project reflects my personal opinion on how `Dto` classes and controllers could  be generated. It is not meant to be a universal solution or to replace the standard behavior of openapi-generator.
 
+## Core idea
+
+This wrapper generates **abstract NestJS controllers** from your OpenAPI spec.
+
+Generated classes contain all HTTP wiring (like `@Controller` or HTTP-related tags, `@Get`, `@Post`, `@Req`, `@Body`... and also params and DTOs).
+
+Once the code is generated based on your OpenAPI you only need to **extend those classes and implement the abstract methods**. Nothing else because all HTTP concerns are already handled by the generated code.
+
+```ts
+import { Injectable } from '@nestjs/common';
+import { UsersApi } from './path/to/generated/api/users.api';
+import { UserDto } from './path/to/generated/model/user.dto';
+
+@Injectable()
+export class MyUserController extends UsersApi {
+    constructor() { super(); }
+
+    protected getUsers(): UserDto[] {
+        return [];
+    }
+}
+```
+
+### What this means
+
+- No HTTP decorators in your code.
+- No manual DTO wiring.
+- No risk of missing endpoints.
+- OpenAPI is the single source of truth.
+- If the spec changes and you don't implement it, TypeScript fails the build.
+- Controllers are already fully wired to HTTP via generated decorators.
+
+This is intentionally closer to **Spring Boot-style contract enforcement** than idiomatic NestJS.
+
 ## Main Features
 
 - Generates **controllers that implement interfaces**, enforcing all methods defined in the OpenAPI spec.
@@ -19,7 +53,7 @@ And also please note the following restrictions when using this wrapper:
 - [`class-validator`](https://www.npmjs.com/package/class-validator) **is automatically referenced** in the generated code, so you must include it as a dependency in your project.
 - Generated controllers use `NestJS` annotations.
 - Generated controllers use `Express` under the hood, so Express-related decorators and behaviors apply.
-- Exists validation for all DTOs.
+- Validation exists for all DTOs.
 - Generated controllers expose one abstract method for each path that must be implemented, otherwise the code will not compile.
 
 **⚠️ At this moment the wrapper output is equivalent to use:**
@@ -146,4 +180,4 @@ ENV NODE_ENV=production
 CMD ["npm", "run", "start:prod"]
 ```
 
-Custom templates used by default can be found [here](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/wrapper/src/templates)
+Custom templates used by default can be found [here](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/wrapper/src/templates).
