@@ -13,21 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./wrapper
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: npm ci
-      - run: npm test
-
   publish-npm:
-    needs: build
     runs-on: ubuntu-latest
     defaults:
       run:
