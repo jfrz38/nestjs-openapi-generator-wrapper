@@ -19,16 +19,15 @@ jobs:
       run:
         working-directory: ./wrapper
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Copy README from root
         run: cp ../README.md ./README.md
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org/
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm --version
       - run: npm ci
       - run: npm run build --if-present
       - run: npm test
-      - run: npm publish --provenance --access public
-        env:
-          NPM_CONFIG_PROVENANCE: true
+      - run: npm publish
