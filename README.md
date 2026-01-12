@@ -1,6 +1,9 @@
 # OpenAPI Custom Wrapper
 
-![npm](https://img.shields.io/npm/v/@jfrz38/nestjs-open-api-generator-wrapper) ![license](https://img.shields.io/npm/l/@jfrz38/nestjs-open-api-generator-wrapper)
+[![npm](https://img.shields.io/npm/v/@jfrz38/nestjs-open-api-generator-wrapper)](https://www.npmjs.com/package/@jfrz38/nestjs-open-api-generator-wrapper)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/jfrz38/nestjs-openapi-generator-wrapper/protect-branch.yml)](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/actions)
+[![license](https://img.shields.io/npm/l/@jfrz38/nestjs-open-api-generator-wrapper)](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/blob/main/LICENSE)
+[![NPM Downloads](https://img.shields.io/npm/dm/@jfrz38/nestjs-open-api-generator-wrapper)](https://www.npmjs.com/package/@jfrz38/nestjs-open-api-generator-wrapper)
 
 An **opinionated wrapper** around [`openapi-generator`](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) for generating TypeScript code to be implemented in NestJS applications using a class and folder structure closer to what I use to use, inspired by Java and Spring Boot-style patterns.
 
