@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { generate } from '../src/index';
 import { existsSync } from 'fs';
 
