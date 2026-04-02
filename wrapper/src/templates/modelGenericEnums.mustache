@@ -1,0 +1,25 @@
+{{#hasEnums}}
+{{#vars}}
+    {{#isEnum}}
+{{#stringEnums}}
+export enum {{classname}}{{enumName}} {
+{{#allowableValues}}
+{{#enumVars}}
+    {{name}} = {{{value}}}{{^-last}},{{/-last}}
+{{/enumVars}}
+{{/allowableValues}}
+};
+{{/stringEnums}}
+{{^stringEnums}}
+export const {{classname}}{{enumName}} = {
+    {{#allowableValues}}
+    {{#enumVars}}
+    {{name}}: {{{value}}}{{^-last}},{{/-last}}
+    {{/enumVars}}
+    {{/allowableValues}}
+} as const;
+export type {{classname}}{{enumName}} = typeof {{classname}}{{enumName}}[keyof typeof {{classname}}{{enumName}}];
+{{/stringEnums}}
+    {{/isEnum}}
+{{/vars}}
+{{/hasEnums}}

@@ -62,4 +62,16 @@ describeIntegration('template integration', () => {
         expect(generatedModel).toContain(`@IsUUID()`);
         expect(generatedModel).toContain(`readonly sessionId: UUID;`);
     });
+
+    it('generates inline model enums without wrapping them in a namespace', () => {
+        const outputDir = generateFixtureOutput('inline-enum-model.openapi.yml');
+        const generatedModel = readFileSync(join(outputDir, 'model', 'userPreferences.dto.ts'), 'utf8');
+
+        expect(generatedModel).toContain(`readonly visibility: UserPreferencesDtoVisibilityEnum;`);
+        expect(generatedModel).toContain(`export const UserPreferencesDtoVisibilityEnum = {`);
+        expect(generatedModel).toContain(`export type UserPreferencesDtoVisibilityEnum = typeof UserPreferencesDtoVisibilityEnum[keyof typeof UserPreferencesDtoVisibilityEnum];`);
+        expect(generatedModel).not.toContain(`export namespace`);
+        expect(generatedModel).not.toContain(`UserPreferencesDto.Visibility`);
+        expect(generatedModel).not.toContain(`UserPreferencesDtoVisibilityEnum.Visibility`);
+    });
 });
