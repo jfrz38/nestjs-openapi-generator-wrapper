@@ -28,7 +28,7 @@ import {
     ArrayMinSize,
     ArrayMaxSize
 } from "class-validator";
-import { UUID } from "crypto";
+import type { UUID } from 'node:crypto';
 
 interface IUserDto { 
     id?: string;
