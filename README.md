@@ -92,8 +92,16 @@ npx @jfrz38/nestjs-open-api-generator-wrapper \
 ```
 
 > It is recommended to add the generated output folder to `.gitignore`, since it is recreated automatically and usually should not be committed.
-
-
+>
+> It is also recommended to include the generated output folder in the `include` section of your `tsconfig.json` so TypeScript picks up the generated files during compilation.
+>
+>```json
+>{
+>  "include": ["src/**/*.ts", "api/generated/src/**/*.ts"]
+>}
+>
+>```
+>
 > ⚠️ **Caution**. The program may remove the output (`-o`) folder to create a clean generation. Default behavior is to **no** overwrite (`--remove-output-dir` is `false`). Overwriting is recommended in production, but be careful not to delete important folders during development.
 
 Allowed parameters are:
