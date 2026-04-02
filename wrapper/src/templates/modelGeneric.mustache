@@ -15,7 +15,7 @@ import {
     ArrayMinSize,
     ArrayMaxSize
 } from "class-validator";
-import { UUID } from "crypto";
+import type { UUID } from 'node:crypto';
 
 interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
 {{#vars}}
