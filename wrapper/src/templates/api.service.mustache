@@ -19,7 +19,7 @@ export abstract class {{classname}} {
 
   {{#operations}}
   {{#operation}}
-  protected abstract {{operationId}}({{#allParams}}{{paramName}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{^required}} | undefined{{/required}}, {{/allParams}}request?: Request, response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+  protected abstract {{operationId}}({{#allParams}}{{paramName}}: {{{dataType}}}{{^required}} | undefined{{/required}}, {{/allParams}}request?: Request, response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
 
   {{/operation}}
   {{/operations}}
@@ -33,7 +33,7 @@ export abstract class {{classname}} {
      {{/allParams}}
      */
     @{{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}()
-    private do{{#lambda.pascalcase}}{{{operationId}}}{{/lambda.pascalcase}}({{#allParams}}{{#isPathParam}}@Param("{{baseName}}") {{/isPathParam}}{{#isQueryParam}}@Query("{{baseName}}") {{/isQueryParam}}{{#isHeaderParam}}@Headers("{{baseName}}") {{/isHeaderParam}}{{#isBodyParam}}@Body() {{/isBodyParam}}{{paramName}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{^required}} | undefined{{/required}}, {{/allParams}}@Req() request?: Request, @Res({ passthrough: true }) response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    private do{{#lambda.pascalcase}}{{{operationId}}}{{/lambda.pascalcase}}({{#allParams}}{{#isPathParam}}@Param("{{baseName}}") {{/isPathParam}}{{#isQueryParam}}@Query("{{baseName}}") {{/isQueryParam}}{{#isHeaderParam}}@Headers("{{baseName}}") {{/isHeaderParam}}{{#isBodyParam}}@Body() {{/isBodyParam}}{{paramName}}: {{{dataType}}}{{^required}} | undefined{{/required}}, {{/allParams}}@Req() request?: Request, @Res({ passthrough: true }) response?: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
       {{#allParams}}
       {{#required}}
         {{#isConstEnumParam}}
