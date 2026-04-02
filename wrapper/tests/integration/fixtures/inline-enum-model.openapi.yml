@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: Inline Enum Model Integration Test
+  version: 1.0.0
+
+paths:
+  /preferences:
+    post:
+      tags: [Preferences]
+      summary: Create user preferences
+      operationId: createUserPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        "201":
+          description: Created
+
+components:
+  schemas:
+    UserPreferences:
+      type: object
+      required:
+        - visibility
+      properties:
+        visibility:
+          type: string
+          enum:
+            - private
+            - shared

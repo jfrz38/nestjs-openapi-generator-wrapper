@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { OptionalOptions, RequiredOptions } from '../../src/types/types';
 
 jest.mock('../../src/index', () => ({
