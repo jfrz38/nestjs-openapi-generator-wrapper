@@ -32,7 +32,8 @@
   "author": "José F. Ruiz Zamora <jrz899@inlumine.ual.es>",
   "license": "MIT",
   "dependencies": {
-    "@openapitools/openapi-generator-cli": "2.31.0"
+    "@openapitools/openapi-generator-cli": "2.31.0",
+    "commander": "14.0.1"
   },
   "devDependencies": {
     "@types/jest": "30.0.0",
