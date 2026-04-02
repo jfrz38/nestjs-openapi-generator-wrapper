@@ -27,8 +27,8 @@ import {
     Matches,
     ArrayMinSize,
     ArrayMaxSize
-} from "class-validator";
-import { UUID } from "crypto";
+} from 'class-validator';
+import type { UUID } from 'node:crypto';
 
 interface INewProductDto { 
     name: string;

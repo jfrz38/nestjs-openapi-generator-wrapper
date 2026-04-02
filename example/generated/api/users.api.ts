@@ -12,7 +12,7 @@
 /* tslint:disable:no-unused-variable member-ordering */
 
 import { Controller, Get, Post, Put, Delete, Patch, UsePipes, ValidationPipe, Body, Param, Query, Headers, Req, Res } from "@nestjs/common";
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { UserDto } from '../model/user.dto';
 
 @Controller()

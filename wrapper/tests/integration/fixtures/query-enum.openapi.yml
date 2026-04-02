@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: Query Enum Integration Test
+  version: 1.0.0
+
+paths:
+  /reports:
+    get:
+      tags: [Reports]
+      summary: List reports
+      operationId: listReports
+      parameters:
+        - name: visibility
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [private, shared]
+      responses:
+        "200":
+          description: OK

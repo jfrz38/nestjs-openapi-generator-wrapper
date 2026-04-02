@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: UUID Model Integration Test
+  version: 1.0.0
+
+paths:
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Create session
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSession'
+      responses:
+        "201":
+          description: Created
+
+components:
+  schemas:
+    CreateSession:
+      type: object
+      required:
+        - sessionId
+      properties:
+        sessionId:
+          type: string
+          format: uuid
