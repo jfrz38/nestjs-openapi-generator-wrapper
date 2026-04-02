@@ -195,3 +195,10 @@ CMD ["npm", "run", "start:prod"]
 ```
 
 Custom templates used by default can be found [here](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/wrapper/src/templates).
+
+That default template set currently overrides:
+
+- `api.service.mustache`
+- `model.mustache`
+- `modelGeneric.mustache`
+- `modelGenericEnums.mustache`

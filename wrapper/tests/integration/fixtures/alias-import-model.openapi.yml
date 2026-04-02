@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Alias Import Model Integration Test
+  version: 1.0.0
+
+paths:
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Create a booking
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        "201":
+          description: Created
+
+components:
+  schemas:
+    BookingOptions:
+      type: object
+      additionalProperties: false
+      properties:
+        breakfast:
+          type: boolean
+        parking:
+          type: boolean
+        late_checkout:
+          type: boolean
+
+    BookingFrequency:
+      type: string
+      enum: [single, weekly, monthly]
+
+    PaymentChannel:
+      type: string
+      enum: [card, transfer, any]
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - location
+        - room_id
+        - date
+        - slot
+        - frequency
+        - attendees
+        - budget
+        - payment_channel
+        - options
+      properties:
+        location:
+          type: string
+        room_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        slot:
+          type: string
+        frequency:
+          $ref: '#/components/schemas/BookingFrequency'
+        attendees:
+          type: integer
+        budget:
+          type: number
+        payment_channel:
+          $ref: '#/components/schemas/PaymentChannel'
+        options:
+          oneOf:
+            - $ref: '#/components/schemas/BookingOptions'
+            - type: object
+              additionalProperties:
+                type: boolean
