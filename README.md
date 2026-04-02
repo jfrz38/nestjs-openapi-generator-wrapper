@@ -88,8 +88,11 @@ Using `npx`:
 ```bash
 npx @jfrz38/nestjs-open-api-generator-wrapper \
 -i ../api/openapi.yaml \
--o ./dist/generated/src
+-o ./api/generated/src
 ```
+
+> It is recommended to add the generated output folder to `.gitignore`, since it is recreated automatically and usually should not be committed.
+
 
 > ⚠️ **Caution**. The program may remove the output (`-o`) folder to create a clean generation. Default behavior is to **no** overwrite (`--remove-output-dir` is `false`). Overwriting is recommended in production, but be careful not to delete important folders during development.
 
