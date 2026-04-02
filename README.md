@@ -199,5 +199,6 @@ Custom templates used by default can be found [here](https://github.com/jfrz38/n
 That default template set currently overrides:
 
 - `api.service.mustache`
+- `model.mustache`
 - `modelGeneric.mustache`
 - `modelGenericEnums.mustache`
