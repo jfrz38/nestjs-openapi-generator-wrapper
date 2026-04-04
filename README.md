@@ -78,8 +78,10 @@ Note that generator (i.e. `-g`) will be always `typescript-nestjs`.
 Using `npm`:
 
 ```bash
-npm install @jfrz38/nestjs-open-api-generator-wrapper
+npm install -D @jfrz38/nestjs-open-api-generator-wrapper
 ```
+
+This wrapper is a development-time code generation tool, so it should be installed as a dev dependency.
 
 ## Usage
 
@@ -147,9 +149,12 @@ Generated folder structure is not as clean as could be but as it is auto-generat
     └── generated/
         ├── api/
         │   ├── tag_1.api.ts
-        │   └── tag_2.api.ts
+        │   ├── tag_2.api.ts
+        │   └── ...
         └── model/
-            └── all_dtos.dto.ts
+            ├── model_1_dto.dto.ts
+            ├── model_2_dto.dto.ts
+            └── ...
 ```
 
 ## Generation example
@@ -158,45 +163,93 @@ Complete code generation and a bigger explanation is into [example folder](https
 
 ## Using in production
 
-To avoid boilerplate the easiest way is to use predefined generator tool with your parameters. If any parameter is used to generate your development code, then you can use predefined command. Otherwise just replace desire flag with your custom parameter.
+To deploy an application using this wrapper, you must ensure that the generated code is available during the build process. There are three ways to achieve this, with the **Integrated Multi-stage Build** being the recommended approach for automated pipelines.
 
-> ⚠️ Note that OpenApi generator uses Java so it can't be used directly.
+### Integrated Multi-stage Build (Recommended)
 
-You can simple use a Dockerfile similar to this:
+This is the most robust workflow. It automates code generation within the Docker build process, ensuring API implementation always stays in sync with OpenAPI spec.
+
+Since the wrapper requires both Java (for OpenAPI Generator) and NodeJS (to run the wrapper and in the end node is mandatory to run NestJS), we use a multi-stage Dockerfile. This allows us to "inject" a modern NodeJS environment into the official OpenAPI image and then discard the heavy Java dependencies, resulting in a slim, production-ready image.
+
+You can use a Dockerfile like this when generating during image build:
 
 ```Dockerfile
+# STAGE 1: API Generation
 FROM openapitools/openapi-generator-cli AS generator
+
+# Inject Node.js 24 from the official image to run the wrapper (install or upgrade node in openapitools container is not a good idea so we can "bring back" from another image that will be used later)
+COPY --from=node:24 /usr/local/bin/node /usr/local/bin/
+COPY --from=node:24 /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 WORKDIR /usr/src/app
 
-# Copy all necessary files: openapi.yml, custom templates...
+# Install dev-dependencies to access the wrapper
+COPY code/package*.json ./
+RUN npm install --only=dev --no-scripts
+
+# Copy API spec. This folder must contains openapi.yaml
 COPY api/ ./api
-COPY code/api/generated/templates ./code/api/generated/templates
-COPY code/api/generated/.openapi-generator-ignore ./code/api/generated/.openapi-generator-ignore
 
-WORKDIR /usr/src/app/code
+# Execute the generation
+RUN npx @jfrz38/nestjs-open-api-generator-wrapper -i ./api/openapi.yaml -o ./generated/src
 
-# Notice how wrapper is not used, just use the same parameters with official image
-RUN openapi-generator-cli generate -g typescript-nestjs -i ../api/openapi.yaml -o api/generated/src -t api/generated/templates --additional-properties=modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api --global-property=apis,models
 
-FROM node:24
+# STAGE 2: Application Build
+FROM node:24 AS builder
 
-# your application dockerfile
+WORKDIR /usr/src/app
 
-# Copy generated files
-COPY --from=generator /usr/src/app/code/api ./code/api
+COPY code/package*.json ./
+RUN npm install
+COPY code/ ./
 
+# Sync the generated sources into the NestJS project
+COPY --from=generator /usr/src/app/generated/src ./api/generated/src
+
+# Compile
+RUN npm run build
+
+
+# STAGE 3: Final production image
+FROM node:24-alpine
+
+WORKDIR /usr/src/app
+
+# Since generator is already executed, only production dependencies are installed
+COPY code/package*.json ./
+RUN npm install --production && npm cache clean --force
+
+# Bring back files from builder stage
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+# Do whatever else you want
 # ...
 
-RUN npm run build
-EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["npm", "run", "start:prod"]
+
+CMD ["node", "dist/main.js"] 
 ```
 
-Custom templates used by default can be found [here](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/wrapper/src/templates).
+### Alternative workflows
 
-That default template set currently overrides:
+If the integrated build does not fit your requirements, you may consider these alternatives:
+
+- **Local generation**: The easiest production workflow is to generate the `api` and `model` files locally and commit the generated output to version control. This avoids the need for Java in your CI/CD pipeline but requires manual updates whenever the OpenAPI spec changes.
+- **Direct official CLI usage**: If you want to use the official generator, this repo still provides the templates and configuration needed for the same output. Just copy custom templates [available in this location](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/main/wrapper/src/templates) and run the equivalent command explained above:
+
+```bash
+openapi-generator-cli generate \
+-g typescript-nestjs \
+-i ../api/openapi.yaml \
+-o api/generated/src \
+-t api/generated/templates \
+--additional-properties=modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api \
+--global-property=apis,models
+```
+
+Default templates currently overrides these ones:
 
 - `api.service.mustache`
 - `model.mustache`
