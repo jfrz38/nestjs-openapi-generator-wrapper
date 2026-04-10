@@ -52,9 +52,9 @@ describe('generate', () => {
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
         expect(rmSync).toHaveBeenCalledWith('dist/output', { recursive: true, force: true });
         expect(execFileSync).toHaveBeenCalledWith(
-            'npx',
+            expect.stringMatching(/^npx(\.cmd)?$/),
             expect.any(Array),
-            expect.objectContaining({ stdio: 'inherit', shell: true })
+            expect.objectContaining({ stdio: 'inherit' })
         );
         expect(DefaultConfig).toHaveBeenCalledWith({
             templateDir: 'tpl',
@@ -66,7 +66,7 @@ describe('generate', () => {
 
         const [file, args] = (execFileSync as jest.Mock).mock.calls[0];
 
-        expect(file).toBe('npx');
+        expect(file).toMatch(/^npx(\.cmd)?$/);
         expect(args).toContain('@openapitools/openapi-generator-cli');
         expect(args).toContain('generate');
         expect(args).toContain('spec.yaml');

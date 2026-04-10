@@ -28,7 +28,8 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
         `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
-    execFileSync('npx', cmdArguments, { stdio: 'inherit', shell: true });
+    const npxExecutable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+    execFileSync(npxExecutable, cmdArguments, { stdio: 'inherit' });
 }
 
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
