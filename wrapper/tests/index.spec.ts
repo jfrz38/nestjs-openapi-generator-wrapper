@@ -51,7 +51,11 @@ describe('generate', () => {
 
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
         expect(rmSync).toHaveBeenCalledWith('dist/output', { recursive: true, force: true });
-        expect(execFileSync).toHaveBeenCalledTimes(1);
+        expect(execFileSync).toHaveBeenCalledWith(
+            'npx',
+            expect.any(Array),
+            expect.objectContaining({ stdio: 'inherit', shell: true })
+        );
         expect(DefaultConfig).toHaveBeenCalledWith({
             templateDir: 'tpl',
             additionalProperties: 'ap',

@@ -28,7 +28,7 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
         `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
-    execFileSync('npx', cmdArguments, { stdio: 'inherit' });
+    execFileSync('npx', cmdArguments, { stdio: 'inherit', shell: true });
 }
 
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
@@ -42,4 +42,3 @@ function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
     rmSync(outputDir, { recursive: true, force: true });
 
 }
-
