@@ -16,8 +16,10 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
 
     evaluateConfigs(outputDir, isCleanOutputEnabled);
 
+    const generatorPath = require.resolve('@openapitools/openapi-generator-cli/main.js');
+
     const cmdArguments = [
-        '@openapitools/openapi-generator-cli',
+        generatorPath,
         'generate',
         '-i', specPath,
         '-g', 'typescript-nestjs',
@@ -28,8 +30,7 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
         `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
-    const npxExecutable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-    execFileSync(npxExecutable, cmdArguments, { stdio: 'inherit' });
+    execFileSync('node', cmdArguments, { stdio: 'inherit' });
 }
 
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
