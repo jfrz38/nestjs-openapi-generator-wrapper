@@ -12,7 +12,7 @@ importers:
         specifier: 2.31.0
         version: 2.31.0(class-validator@0.14.4)
       class-validator:
-        specifier: ^0.14.0
+        specifier: '>=0.14.0'
         version: 0.14.4
       commander:
         specifier: 14.0.1
