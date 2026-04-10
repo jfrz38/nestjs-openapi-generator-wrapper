@@ -54,7 +54,10 @@ describe('generate', () => {
         expect(execFileSync).toHaveBeenNthCalledWith(
             1,
             'node',
-            expect.arrayContaining([expect.stringContaining('openapi-generator-cli'), 'generate']),
+            expect.arrayContaining([
+                expect.stringMatching(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/),
+                'generate'
+            ]),
             expect.objectContaining({ stdio: 'inherit' })
         );
         expect(DefaultConfig).toHaveBeenCalledWith({
@@ -68,7 +71,7 @@ describe('generate', () => {
         const [file, args] = (execFileSync as jest.Mock).mock.calls[0];
 
         expect(file).toBe('node');
-        expect(args[0]).toContain('@openapitools\\openapi-generator-cli\\main.js');
+        expect(args[0]).toMatch(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/);
         expect(args).toContain('generate');
         expect(args).toContain('spec.yaml');
         expect(args).toContain('dist/output');
