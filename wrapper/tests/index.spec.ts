@@ -1,8 +1,8 @@
+import { existsSync, rmSync } from 'fs';
 import { generate } from '../src/index';
-import { existsSync } from 'fs';
 
 jest.mock('child_process', () => ({
-    execSync: jest.fn()
+    execFileSync: jest.fn()
 }));
 
 jest.mock('../src/config/default-config', () => {
@@ -19,10 +19,11 @@ jest.mock('../src/config/default-config', () => {
 });
 
 jest.mock('fs', () => ({
-    existsSync: jest.fn()
+    existsSync: jest.fn(),
+    rmSync: jest.fn()
 }));
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { DefaultConfig } from '../src/config/default-config';
 import { OptionalOptions, RequiredOptions } from '../src/types/types';
 
@@ -31,7 +32,7 @@ describe('generate', () => {
         jest.clearAllMocks();
     });
 
-    it('when all flags used should call DefaultConfig and execSync with expected command', () => {
+    it('when all flags used should call DefaultConfig, rmSync and execFileSync with expected command', () => {
         const requiredOptions: RequiredOptions = {
             specPath: 'spec.yaml',
             outputDir: 'dist/output'
@@ -49,9 +50,15 @@ describe('generate', () => {
         generate(requiredOptions, optionalOptions);
 
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(execSync).toHaveBeenCalledTimes(2);
-        expect(execSync).toHaveBeenCalledWith(
-            expect.stringContaining('rm -r dist/output')
+        expect(rmSync).toHaveBeenCalledWith('dist/output', { recursive: true, force: true });
+        expect(execFileSync).toHaveBeenNthCalledWith(
+            1,
+            'node',
+            expect.arrayContaining([
+                expect.stringMatching(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/),
+                'generate'
+            ]),
+            expect.objectContaining({ stdio: 'inherit' })
         );
         expect(DefaultConfig).toHaveBeenCalledWith({
             templateDir: 'tpl',
@@ -61,15 +68,17 @@ describe('generate', () => {
             isCleanOutputEnabled: true
         });
 
-        const cmd = (execSync as jest.Mock).mock.calls[1][0];
+        const [file, args] = (execFileSync as jest.Mock).mock.calls[0];
 
-        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
-        expect(cmd).toContain('-i spec.yaml');
-        expect(cmd).toContain('-o dist/output');
-        expect(cmd).toContain('-t mock-templates');
-        expect(cmd).toContain('--additional-properties=mock-additional');
-        expect(cmd).toContain('--global-property=mock-global');
-        expect(cmd).toContain('--ignore-file-override=mock-ignore-file');
+        expect(file).toBe('node');
+        expect(args[0]).toMatch(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/);
+        expect(args).toContain('generate');
+        expect(args).toContain('spec.yaml');
+        expect(args).toContain('dist/output');
+        expect(args).toContain('mock-templates');
+        expect(args).toContain('--additional-properties=mock-additional');
+        expect(args).toContain('--global-property=mock-global');
+        expect(args).toContain('--ignore-file-override=mock-ignore-file');
     });
 
     it('when cleanOutput is not enabled and output directory not exists should not call rm command before generation', () => {
@@ -86,13 +95,12 @@ describe('generate', () => {
         generate(requiredOptions);
 
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(execSync).toHaveBeenCalledTimes(1);
+        expect(rmSync).not.toHaveBeenCalled();
+        expect(execFileSync).toHaveBeenCalledTimes(1);
 
-        const cmd = (execSync as jest.Mock).mock.calls[0][0];
-
-        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
-        expect(cmd).toContain('-i spec.yaml');
-        expect(cmd).toContain('-o dist/output');
+        const args = (execFileSync as jest.Mock).mock.calls[0][1];
+        expect(args).toContain('spec.yaml');
+        expect(args).toContain('dist/output');
     });
 
     it('when cleanOutput is not enabled and output directory exists should not call rm command before generation', () => {
@@ -110,14 +118,13 @@ describe('generate', () => {
         generate(options);
 
         expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(execSync).toHaveBeenCalledTimes(1);
+        expect(rmSync).not.toHaveBeenCalled();
+        expect(execFileSync).toHaveBeenCalledTimes(1);
         expect(consoleSpy).toHaveBeenNthCalledWith(1, expect.stringContaining(`Output directory 'dist/output' already exists`));
 
-        const cmd = (execSync as jest.Mock).mock.calls[0][0];
-
-        expect(cmd).toContain('npx @openapitools/openapi-generator-cli generate');
-        expect(cmd).toContain('-i spec.yaml');
-        expect(cmd).toContain('-o dist/output');
+        const args = (execFileSync as jest.Mock).mock.calls[0][1];
+        expect(args).toContain('spec.yaml');
+        expect(args).toContain('dist/output');
 
         consoleSpy.mockRestore();
     });
