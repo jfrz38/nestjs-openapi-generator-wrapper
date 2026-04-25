@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { existsSync, rmSync } from 'fs';
 import { DefaultConfig } from './config/default-config';
 import { OptionalOptions, RequiredOptions } from './types/types';
 
@@ -16,18 +16,21 @@ export function generate(mandatoryOptions: RequiredOptions, optionalOptions?: Op
 
     evaluateConfigs(outputDir, isCleanOutputEnabled);
 
+    const generatorPath = require.resolve('@openapitools/openapi-generator-cli/main.js');
+
     const cmdArguments = [
-        `npx @openapitools/openapi-generator-cli generate`,
-        `-i ${specPath}`,
-        `-g typescript-nestjs`,
-        `-o ${outputDir}`,
-        `-t ${templateDir}`,
+        generatorPath,
+        'generate',
+        '-i', specPath,
+        '-g', 'typescript-nestjs',
+        '-o', outputDir,
+        '-t', templateDir,
         `--additional-properties=${additionalProperties}`,
         `--global-property=${globalProperty}`,
         `--ignore-file-override=${generatorIgnoreFile}`
     ];
 
-    execSync(cmdArguments.join(' '), { stdio: 'inherit' });
+    execFileSync('node', cmdArguments, { stdio: 'inherit' });
 }
 
 function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
@@ -38,7 +41,6 @@ function evaluateConfigs(outputDir: string, isCleanOutputEnabled: boolean) {
         return;
     }
 
-    execSync(`rm -r ${outputDir}`);
+    rmSync(outputDir, { recursive: true, force: true });
 
 }
-
