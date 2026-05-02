@@ -92,7 +92,7 @@ jobs:
         run: cp ../README.md ./README.md
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v6.0.3
         with:
           version: 10
 
