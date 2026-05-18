@@ -94,7 +94,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6.0.3
         with:
-          version: 10
+          package_json_file: wrapper/package.json
 
       - name: Setup Node
         uses: actions/setup-node@v6
