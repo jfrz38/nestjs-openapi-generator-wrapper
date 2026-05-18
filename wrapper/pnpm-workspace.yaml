@@ -1,3 +1,7 @@
 enablePrePostScripts: false
 minimumReleaseAge: 4320
 saveExact: true
+allowBuilds:
+  '@nestjs/core': true
+  '@openapitools/openapi-generator-cli': true
+  unrs-resolver: true
