@@ -26,9 +26,9 @@ jobs:
           java-version: '17'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v6.0.3
         with:
-          version: 10
+          package_json_file: wrapper/package.json
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -41,7 +41,7 @@ jobs:
         run: make install
 
       - name: Cache OpenAPI Generator
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: wrapper/node_modules/@openapitools/openapi-generator-cli/versions
           key: ${{ runner.os }}-openapi-generator-${{ hashFiles('wrapper/openapitools.json') }}

@@ -39,8 +39,8 @@ describeIntegration('template integration', () => {
         const generatedApi = readFileSync(join(outputDir, 'api', 'reports.api.ts'), 'utf8');
 
         expect(generatedApi).toContain(`import type { Request, Response } from 'express';`);
-        expect(generatedApi).toContain(`protected abstract listReports(visibility: 'private' | 'shared' | undefined, request?: Request, response?: Response): void | Promise<void>;`);
-        expect(generatedApi).toContain(`private doListReports(@Query("visibility") visibility: 'private' | 'shared' | undefined, @Req() request?: Request, @Res({ passthrough: true }) response?: Response): void | Promise<void> {`);
+        expect(generatedApi).toContain(`protected abstract listReports(visibility: 'private' | 'shared' | undefined, request: Request, response: Response): void | Promise<void>;`);
+        expect(generatedApi).toContain(`private doListReports(@Query("visibility") visibility: 'private' | 'shared' | undefined, @Req() request: Request, @Res({ passthrough: true }) response: Response): void | Promise<void> {`);
         expect(generatedApi).not.toContain(`VisibilityEnum`);
     });
 

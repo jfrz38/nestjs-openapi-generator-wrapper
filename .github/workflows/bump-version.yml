@@ -1,0 +1,46 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version component to bump
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      base_branch:
+        description: Branch to bump and target with the pull request
+        required: true
+        default: develop
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump version
+        uses: jfrz38/version-bump-action@v0
+        with:
+          bump: ${{ inputs.bump }}
+          strategy: npm
+          version-file: wrapper/package.json
+          base-branch: ${{ inputs.base_branch }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-body: Bumps nestjs-openapi-generator-wrapper from {current-version} to {next-version} using a {bump} release bump.
