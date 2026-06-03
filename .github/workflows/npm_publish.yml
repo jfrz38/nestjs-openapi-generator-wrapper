@@ -40,7 +40,7 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Check out release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           ref: ${{ steps.version.outputs.tag }}
           fetch-depth: 0
@@ -68,7 +68,7 @@ jobs:
 
       - id: version-check
         name: Check version is not already published
-        uses: jfrz38/check-version-change@v1
+        uses: jfrz38/check-version-change@v1.1.0
         with:
           file-path: wrapper/package.json
           package-name: '@jfrz38/nestjs-open-api-generator-wrapper'
@@ -92,7 +92,7 @@ jobs:
         run: cp ../README.md ./README.md
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.3
+        uses: pnpm/action-setup@v6.0.8
         with:
           package_json_file: wrapper/package.json
 
