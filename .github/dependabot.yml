@@ -10,9 +10,24 @@ updates:
     commit-message:
       prefix: "[Dependency Update]"
     groups:
+      typescript-toolchain:
+        patterns:
+          - "typescript"
+          - "@typescript/*"
+          - "ts-jest"
       dependencies:
         patterns:
           - "*"
+        exclude-patterns:
+          - "typescript"
+          - "@typescript/*"
+          - "ts-jest"
+          - "commander"
+          - "@openapitools/openapi-generator-cli"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

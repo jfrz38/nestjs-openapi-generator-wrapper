@@ -17,21 +17,21 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.7.0
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.3
+        uses: pnpm/action-setup@v6.0.10
         with:
           package_json_file: wrapper/package.json
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -41,7 +41,7 @@ jobs:
         run: make install
 
       - name: Cache OpenAPI Generator
-        uses: actions/cache@v5
+        uses: actions/cache@v6.1.0
         with:
           path: wrapper/node_modules/@openapitools/openapi-generator-cli/versions
           key: ${{ runner.os }}-openapi-generator-${{ hashFiles('wrapper/openapitools.json') }}
