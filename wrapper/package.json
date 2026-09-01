@@ -36,7 +36,7 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@openapitools/openapi-generator-cli": "2.40.1",
+    "@openapitools/openapi-generator-cli": "2.41.0",
     "commander": "15.0.0"
   },
   "devDependencies": {
