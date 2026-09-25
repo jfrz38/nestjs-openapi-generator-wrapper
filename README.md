@@ -93,7 +93,7 @@ npx @jfrz38/nestjs-open-api-generator-wrapper \
 -o ./api/generated/src
 ```
 
-> It is recommended to add the generated output folder to `.gitignore`, since it is recreated automatically and usually should not be committed.
+> It is recommended to add the generated output folder to `.gitignore`, since generated code usually should not be committed.
 >
 > It is also recommended to include the generated output folder in the `include` section of your `tsconfig.json` so TypeScript picks up the generated files during compilation.
 >
@@ -104,7 +104,7 @@ npx @jfrz38/nestjs-open-api-generator-wrapper \
 >
 >```
 >
-> ⚠️ **Caution**. The program may remove the output (`-o`) folder to create a clean generation. Default behavior is to **no** overwrite (`--remove-output-dir` is `false`). Overwriting is recommended in production, but be careful not to delete important folders during development.
+> Without `--clean-output`, generation writes into the existing output directory: matching files may be overwritten and obsolete files remain. With `--clean-output`, all input paths are validated first, generation is staged in a temporary sibling directory, and the existing output is replaced only after generation succeeds. Filesystem roots, the user home, the current working directory or its ancestors, and directories containing the OpenAPI input are rejected as clean-output targets.
 
 Allowed parameters are:
 
@@ -116,7 +116,7 @@ Allowed parameters are:
 | `--additional-properties <properties>` | Pass additional properties to the generator | No        | `modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api`               |
 | `--global-property <property>`         | Set global properties for code generation   | No        | `apis,models`               |
 | `--ignore-file-override <path>`        | Path to an OpenAPI ignore file              | No        | `.openapi-generator-ignore`               |
-| `--clean-output`                         | Remove and overwrite the output directory    | No       | `false` |
+| `--clean-output`                         | Safely replace the output after successful generation | No       | `false` |
 
 Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
 
