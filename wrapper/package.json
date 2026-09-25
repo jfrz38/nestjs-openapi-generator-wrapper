@@ -23,6 +23,7 @@
   },
   "files": [
     "dist",
+    "openapitools.json",
     "README.md",
     "LICENSE"
   ],
@@ -36,6 +37,7 @@
     "test": "npm run test:unit && npm run test:package",
     "test:unit": "jest --runInBand",
     "test:package": "node scripts/package-smoke.js",
+    "test:compatibility": "node scripts/package-smoke.js --generate",
     "test-coverage": "jest --coverage"
   },
   "keywords": [

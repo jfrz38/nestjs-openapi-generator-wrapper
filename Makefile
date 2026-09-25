@@ -21,6 +21,10 @@ test: ## run unit tests and package smoke test in the wrapper
 test-integration: ## run integration tests against example OpenAPI input
 	cd $(CODE_PATH) && RUN_OPENAPI_INTEGRATION=true pnpm exec jest tests/integration/api-template.integration.spec.ts --runInBand
 
+.PHONY: test-compatibility
+test-compatibility: ## run a generation smoke test against the packed package
+	cd $(CODE_PATH) && pnpm run test:compatibility
+
 .PHONY: test-integration-keep
 test-integration-keep: ## run integration test and preserve generated output
 	cd $(CODE_PATH) && RUN_OPENAPI_INTEGRATION=true KEEP_OPENAPI_INTEGRATION_OUTPUT=true pnpm exec jest tests/integration/api-template.integration.spec.ts --runInBand

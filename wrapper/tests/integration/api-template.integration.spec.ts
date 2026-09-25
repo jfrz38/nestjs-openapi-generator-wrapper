@@ -5,6 +5,8 @@ import { generate } from '../../src/index';
 
 const describeIntegration = process.env.RUN_OPENAPI_INTEGRATION === 'true' ? describe : describe.skip;
 const keepGeneratedOutput = process.env.KEEP_OPENAPI_INTEGRATION_OUTPUT === 'true';
+const generatorConfig = JSON.parse(readFileSync(resolve(__dirname, '../../openapitools.json'), 'utf8'));
+const pinnedGeneratorVersion = generatorConfig['generator-cli'].version as string;
 
 describeIntegration('template integration', () => {
     let tempDir: string;
@@ -32,6 +34,43 @@ describeIntegration('template integration', () => {
         });
 
         return outputDir;
+    }
+
+    function generateFromCaller(callerDir: string) {
+        const outputDir = join(callerDir, 'generated');
+        const emptyIgnoreFile = join(callerDir, '.openapi-generator-ignore');
+        const originalCwd = process.cwd();
+        const originalPwd = process.env.PWD;
+        const originalInitCwd = process.env.INIT_CWD;
+        writeFileSync(emptyIgnoreFile, '');
+
+        try {
+            process.chdir(callerDir);
+            process.env.PWD = callerDir;
+            process.env.INIT_CWD = callerDir;
+            generate({
+                specPath: resolve(__dirname, 'fixtures/query-enum.openapi.yml'),
+                outputDir
+            }, {
+                generatorIgnoreFile: emptyIgnoreFile,
+                globalProperty: 'apis,models,supportingFiles'
+            });
+        } finally {
+            process.chdir(originalCwd);
+            restoreEnvironmentVariable('PWD', originalPwd);
+            restoreEnvironmentVariable('INIT_CWD', originalInitCwd);
+        }
+
+        return readFileSync(join(outputDir, '.openapi-generator', 'VERSION'), 'utf8').trim();
+    }
+
+    function restoreEnvironmentVariable(name: 'PWD' | 'INIT_CWD', value: string | undefined) {
+        if (value === undefined) {
+            delete process.env[name];
+            return;
+        }
+
+        process.env[name] = value;
     }
 
     it('generates enum query params using the enum-aware TypeScript type', () => {
@@ -101,5 +140,26 @@ describeIntegration('template integration', () => {
 
         expect(existsSync(obsoleteFile)).toBe(false);
         expect(existsSync(join(outputDir, 'api', 'reports.api.ts'))).toBe(true);
+    });
+
+    it('uses the pinned generator without creating caller configuration', () => {
+        const callerDir = join(tempDir, 'caller-without-config');
+        mkdirSync(callerDir);
+
+        expect(generateFromCaller(callerDir)).toBe(pinnedGeneratorVersion);
+        expect(existsSync(join(callerDir, 'openapitools.json'))).toBe(false);
+    });
+
+    it('ignores a conflicting caller generator configuration', () => {
+        const callerDir = join(tempDir, 'caller-with-conflicting-config');
+        const callerConfigPath = join(callerDir, 'openapitools.json');
+        const callerConfig = `${JSON.stringify({
+            'generator-cli': { version: '7.13.0' }
+        }, null, 2)}\n`;
+        mkdirSync(callerDir);
+        writeFileSync(callerConfigPath, callerConfig);
+
+        expect(generateFromCaller(callerDir)).toBe(pinnedGeneratorVersion);
+        expect(readFileSync(callerConfigPath, 'utf8')).toBe(callerConfig);
     });
 });

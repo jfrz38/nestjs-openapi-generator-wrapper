@@ -139,9 +139,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# OpenApi
-wrapper/openapitools.json
-
 # Package metadata staged by npm lifecycle scripts
 wrapper/README.md
 wrapper/LICENSE
