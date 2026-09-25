@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info:
+  title: Unsupported Cookie Parameter
+  version: 1.0.0
+paths:
+  /sessions:
+    get:
+      tags: [Sessions]
+      operationId: getSession
+      parameters:
+        - name: session
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

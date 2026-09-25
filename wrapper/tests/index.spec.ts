@@ -213,4 +213,53 @@ describe('generate', () => {
 
         expect(mockedExecFileSync).not.toHaveBeenCalled();
     });
+
+    it.each([
+        [
+            'TRACE operations',
+            `paths:\n  /diagnostics:\n    trace:\n      responses:\n        '200':\n          description: OK`,
+            'TRACE operations are not supported'
+        ],
+        [
+            'cookie parameters',
+            `paths:\n  /sessions:\n    get:\n      parameters:\n        - name: session\n          in: cookie\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK`,
+            'cookie parameters require application-specific cookie middleware'
+        ],
+        [
+            'multipart request bodies',
+            `paths:\n  /uploads:\n    post:\n      requestBody:\n        content:\n          multipart/form-data:\n            schema:\n              type: object\n      responses:\n        '204':\n          description: Uploaded`,
+            "'multipart/form-data' request bodies require application-specific middleware"
+        ],
+        [
+            'URL-encoded request bodies',
+            `paths:\n  /forms:\n    post:\n      requestBody:\n        content:\n          application/x-www-form-urlencoded:\n            schema:\n              type: object\n      responses:\n        '204':\n          description: Submitted`,
+            "'application/x-www-form-urlencoded' request bodies require application-specific middleware"
+        ],
+        [
+            'OpenAPI 2 formData parameters',
+            `swagger: '2.0'\npaths:\n  /forms:\n    post:\n      parameters:\n        - name: attachment\n          in: formData\n          type: string\n      responses:\n        '204':\n          description: Submitted`,
+            'OpenAPI 2 formData parameters are not supported'
+        ],
+        [
+            'multiple successful responses',
+            `paths:\n  /jobs:\n    post:\n      responses:\n        '200':\n          description: Completed\n        '202':\n          description: Accepted`,
+            'multiple successful responses (200, 202) cannot be represented by one static NestJS HTTP status'
+        ],
+        [
+            'wildcard successful responses',
+            `paths:\n  /jobs:\n    post:\n      responses:\n        '2XX':\n          description: Successful`,
+            'wildcard 2XX responses cannot be represented by a static NestJS HTTP status'
+        ],
+        [
+            'unsafe parameter names',
+            `paths:\n  /reports:\n    get:\n      parameters:\n        - name: filter\\"key\n          in: query\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK`,
+            'contains characters that cannot be represented safely in generated TypeScript'
+        ]
+    ])('rejects unsupported %s before generation', (_description, paths, expectedMessage) => {
+        writeFileSync(specPath, `openapi: 3.0.3\ninfo:\n  title: Test\n  version: 1.0.0\n${paths}\n`);
+
+        expect(() => generate({ specPath, outputDir })).toThrow(expectedMessage);
+
+        expect(mockedExecFileSync).not.toHaveBeenCalled();
+    });
 });

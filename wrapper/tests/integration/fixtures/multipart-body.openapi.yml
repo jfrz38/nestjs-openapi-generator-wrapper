@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Unsupported Multipart Body
+  version: 1.0.0
+paths:
+  /uploads:
+    post:
+      tags: [Uploads]
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "204":
+          description: Uploaded

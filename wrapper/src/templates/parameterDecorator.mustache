@@ -1,0 +1,1 @@
+{{#isPathParam}}@Nest.Param("{{{baseName}}}"{{>primitiveParameterPipe}}) {{/isPathParam}}{{#isQueryParam}}@Nest.Query("{{{baseName}}}"{{>primitiveParameterPipe}}) {{/isQueryParam}}{{#isHeaderParam}}@Nest.Headers("{{{baseName}}}") {{/isHeaderParam}}{{#isBodyParam}}@Nest.Body() {{/isBodyParam}}
