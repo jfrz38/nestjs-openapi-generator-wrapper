@@ -1,0 +1,60 @@
+name: Compatibility Tests
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-smoke:
+    name: Node ${{ matrix.node }}, Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - node: '24'
+            java: '11'
+          - node: '24'
+            java: '25'
+          - node: '26'
+            java: '25'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v6.0.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6.0.10
+        with:
+          package_json_file: wrapper/package.json
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+          cache-dependency-path: wrapper/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Cache OpenAPI Generator
+        uses: actions/cache@v6.1.0
+        with:
+          path: wrapper/node_modules/@openapitools/openapi-generator-cli/versions
+          key: ${{ runner.os }}-openapi-generator-${{ hashFiles('wrapper/openapitools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-openapi-generator-
+
+      - name: Run compatibility smoke test
+        run: make test-compatibility
