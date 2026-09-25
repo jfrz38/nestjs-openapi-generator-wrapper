@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { tmpdir } from 'os';
 import { generate } from '../../src/index';
@@ -84,5 +84,22 @@ describeIntegration('template integration', () => {
         expect(generatedModel).not.toContain(`import { CreateBookingRequestOptionsDto } from './createBookingRequestOptions.dto';`);
         expect(generatedAliasModel).toContain(`import type { BookingOptionsDto } from './bookingOptions.dto';`);
         expect(generatedAliasModel).not.toContain(`import { BookingOptionsDto } from './bookingOptions.dto';`);
+    });
+
+    it('replaces existing output after a successful clean generation', () => {
+        const outputDir = join(tempDir, 'generated');
+        const obsoleteFile = join(outputDir, 'obsolete.ts');
+        mkdirSync(outputDir);
+        writeFileSync(obsoleteFile, 'obsolete output');
+
+        generate({
+            specPath: resolve(__dirname, 'fixtures/query-enum.openapi.yml'),
+            outputDir
+        }, {
+            isCleanOutputEnabled: true
+        });
+
+        expect(existsSync(obsoleteFile)).toBe(false);
+        expect(existsSync(join(outputDir, 'api', 'reports.api.ts'))).toBe(true);
     });
 });

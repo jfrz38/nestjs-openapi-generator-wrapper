@@ -1,131 +1,212 @@
-import { existsSync, rmSync } from 'fs';
+import { execFileSync } from 'child_process';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'fs';
+import { homedir, tmpdir } from 'os';
+import { dirname, join, parse, resolve } from 'path';
 import { generate } from '../src/index';
+import { OptionalOptions, RequiredOptions } from '../src/types/types';
 
 jest.mock('child_process', () => ({
     execFileSync: jest.fn()
 }));
 
-jest.mock('../src/config/default-config', () => {
-    const config: OptionalOptions = {
-        templateDir: 'mock-templates',
-        additionalProperties: 'mock-additional',
-        globalProperty: 'mock-global',
-        generatorIgnoreFile: 'mock-ignore-file',
-        isCleanOutputEnabled: true
-    }
-    return {
-        DefaultConfig: jest.fn().mockImplementation(() => (config))
-    };
-});
-
-jest.mock('fs', () => ({
-    existsSync: jest.fn(),
-    rmSync: jest.fn()
-}));
-
-import { execFileSync } from 'child_process';
-import { DefaultConfig } from '../src/config/default-config';
-import { OptionalOptions, RequiredOptions } from '../src/types/types';
+const mockedExecFileSync = execFileSync as jest.Mock;
 
 describe('generate', () => {
+    let tempDir: string;
+    let specPath: string;
+    let outputDir: string;
+
     beforeEach(() => {
         jest.clearAllMocks();
+        tempDir = mkdtempSync(join(tmpdir(), 'nestjs-openapi-wrapper-unit-'));
+        specPath = join(tempDir, 'spec.yaml');
+        outputDir = join(tempDir, 'generated');
+        writeFileSync(specPath, 'openapi: 3.0.0');
+
+        mockedExecFileSync.mockImplementation((_runtime: string, args: string[]) => {
+            const generatedOutput = args[args.indexOf('-o') + 1];
+            mkdirSync(generatedOutput, { recursive: true });
+            writeFileSync(join(generatedOutput, 'generated.ts'), 'new output');
+        });
     });
 
-    it('when all flags used should call DefaultConfig, rmSync and execFileSync with expected command', () => {
-        const requiredOptions: RequiredOptions = {
-            specPath: 'spec.yaml',
-            outputDir: 'dist/output'
-        };
+    afterEach(() => {
+        rmSync(tempDir, { recursive: true, force: true });
+        jest.restoreAllMocks();
+    });
 
+    it('resolves all paths and executes OpenAPI Generator with the current Node.js runtime', () => {
+        const templateDir = join(tempDir, 'templates');
+        const generatorIgnoreFile = join(tempDir, '.openapi-generator-ignore');
+        mkdirSync(templateDir);
+        writeFileSync(generatorIgnoreFile, '');
+
+        const requiredOptions: RequiredOptions = {
+            specPath,
+            outputDir
+        };
         const optionalOptions: OptionalOptions = {
-            templateDir: 'tpl',
+            templateDir,
             additionalProperties: 'ap',
             globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file',
-            isCleanOutputEnabled: true
+            generatorIgnoreFile
         };
-        (existsSync as jest.Mock).mockReturnValue(true);
 
         generate(requiredOptions, optionalOptions);
 
-        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(rmSync).toHaveBeenCalledWith('dist/output', { recursive: true, force: true });
-        expect(execFileSync).toHaveBeenNthCalledWith(
-            1,
-            'node',
-            expect.arrayContaining([
-                expect.stringMatching(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/),
-                'generate'
-            ]),
-            expect.objectContaining({ stdio: 'inherit' })
-        );
-        expect(DefaultConfig).toHaveBeenCalledWith({
-            templateDir: 'tpl',
-            additionalProperties: 'ap',
-            globalProperty: 'gp',
-            generatorIgnoreFile: 'ignore-file',
-            isCleanOutputEnabled: true
+        expect(mockedExecFileSync).toHaveBeenCalledTimes(1);
+        const [runtime, args, spawnOptions] = mockedExecFileSync.mock.calls[0] as [string, string[], object];
+        expect(runtime).toBe(process.execPath);
+        expect(args[0]).toMatch(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/);
+        expect(args).toEqual(expect.arrayContaining([
+            'generate',
+            '-i', resolve(specPath),
+            '-o', resolve(outputDir),
+            '-t', resolve(templateDir),
+            '--additional-properties=ap',
+            '--global-property=gp',
+            `--ignore-file-override=${resolve(generatorIgnoreFile)}`
+        ]));
+        expect(spawnOptions).toEqual(expect.objectContaining({ stdio: 'inherit' }));
+    });
+
+    it('warns with the resolved path and preserves obsolete files without clean output', () => {
+        mkdirSync(outputDir);
+        const obsoleteFile = join(outputDir, 'obsolete.ts');
+        writeFileSync(obsoleteFile, 'old output');
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+        generate({ specPath, outputDir });
+
+        expect(readFileSync(obsoleteFile, 'utf8')).toBe('old output');
+        expect(readFileSync(join(outputDir, 'generated.ts'), 'utf8')).toBe('new output');
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(resolve(outputDir)));
+    });
+
+    it('replaces an existing output only after successful clean generation', () => {
+        mkdirSync(outputDir);
+        const obsoleteFile = join(outputDir, 'obsolete.ts');
+        writeFileSync(obsoleteFile, 'old output');
+
+        generate({ specPath, outputDir }, { isCleanOutputEnabled: true });
+
+        expect(existsSync(obsoleteFile)).toBe(false);
+        expect(readFileSync(join(outputDir, 'generated.ts'), 'utf8')).toBe('new output');
+        const generatedOutput = mockedExecFileSync.mock.calls[0][1][mockedExecFileSync.mock.calls[0][1].indexOf('-o') + 1];
+        expect(generatedOutput).not.toBe(resolve(outputDir));
+        expect(dirname(generatedOutput)).toBe(dirname(resolve(outputDir)));
+    });
+
+    it('keeps the existing output untouched when generation fails', () => {
+        mkdirSync(outputDir);
+        const existingFile = join(outputDir, 'existing.ts');
+        writeFileSync(existingFile, 'valid output');
+        mockedExecFileSync.mockImplementationOnce(() => {
+            throw new Error('generator failed');
         });
 
-        const [file, args] = (execFileSync as jest.Mock).mock.calls[0];
+        expect(() => generate({ specPath, outputDir }, { isCleanOutputEnabled: true })).toThrow('generator failed');
 
-        expect(file).toBe('node');
-        expect(args[0]).toMatch(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/);
-        expect(args).toContain('generate');
-        expect(args).toContain('spec.yaml');
-        expect(args).toContain('dist/output');
-        expect(args).toContain('mock-templates');
-        expect(args).toContain('--additional-properties=mock-additional');
-        expect(args).toContain('--global-property=mock-global');
-        expect(args).toContain('--ignore-file-override=mock-ignore-file');
+        expect(readFileSync(existingFile, 'utf8')).toBe('valid output');
+        expect(existsSync(join(outputDir, 'generated.ts'))).toBe(false);
     });
 
-    it('when cleanOutput is not enabled and output directory not exists should not call rm command before generation', () => {
-        (DefaultConfig as jest.Mock).mockImplementationOnce(() => ({
-            isCleanOutputEnabled: false
-        }));
-        (existsSync as jest.Mock).mockReturnValue(false);
+    it('restores the existing output when promotion of staged output fails', () => {
+        mkdirSync(outputDir);
+        const existingFile = join(outputDir, 'existing.ts');
+        writeFileSync(existingFile, 'valid output');
+        const fsModule = require('fs') as typeof import('fs');
+        const realRenameSync = fsModule.renameSync;
+        let renameCount = 0;
+        const renameSpy = jest.spyOn(fsModule, 'renameSync').mockImplementation((oldPath, newPath) => {
+            renameCount += 1;
+            if (renameCount === 2) throw new Error('promotion failed');
+            realRenameSync(oldPath, newPath);
+        });
 
-        const requiredOptions: RequiredOptions = {
-            specPath: 'spec.yaml',
-            outputDir: 'dist/output'
-        };
+        expect(() => generate({ specPath, outputDir }, { isCleanOutputEnabled: true })).toThrow('promotion failed');
+        renameSpy.mockRestore();
 
-        generate(requiredOptions);
-
-        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(rmSync).not.toHaveBeenCalled();
-        expect(execFileSync).toHaveBeenCalledTimes(1);
-
-        const args = (execFileSync as jest.Mock).mock.calls[0][1];
-        expect(args).toContain('spec.yaml');
-        expect(args).toContain('dist/output');
+        expect(readFileSync(existingFile, 'utf8')).toBe('valid output');
+        expect(existsSync(join(outputDir, 'generated.ts'))).toBe(false);
     });
 
-    it('when cleanOutput is not enabled and output directory exists should not call rm command before generation', () => {
-        (DefaultConfig as jest.Mock).mockImplementationOnce(() => ({
-            isCleanOutputEnabled: false
-        }));
-        (existsSync as jest.Mock).mockReturnValue(true);
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation((() => { }));
+    it('warns without failing when an obsolete backup cannot be removed', () => {
+        mkdirSync(outputDir);
+        writeFileSync(join(outputDir, 'existing.ts'), 'valid output');
+        const fsModule = require('fs') as typeof import('fs');
+        const rmSpy = jest.spyOn(fsModule, 'rmSync').mockImplementationOnce(() => {
+            throw new Error('backup cleanup failed');
+        });
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-        const options = {
-            specPath: 'spec.yaml',
-            outputDir: 'dist/output'
-        };
+        expect(() => generate({ specPath, outputDir }, { isCleanOutputEnabled: true })).not.toThrow();
+        rmSpy.mockRestore();
 
-        generate(options);
+        expect(readFileSync(join(outputDir, 'generated.ts'), 'utf8')).toBe('new output');
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Could not remove temporary directory'));
+    });
 
-        expect(existsSync).toHaveBeenNthCalledWith(1, 'dist/output');
-        expect(rmSync).not.toHaveBeenCalled();
-        expect(execFileSync).toHaveBeenCalledTimes(1);
-        expect(consoleSpy).toHaveBeenNthCalledWith(1, expect.stringContaining(`Output directory 'dist/output' already exists`));
+    it('does not invoke the generator or touch existing output when preflight validation fails', () => {
+        mkdirSync(outputDir);
+        const existingFile = join(outputDir, 'existing.ts');
+        writeFileSync(existingFile, 'valid output');
+        const missingSpec = join(tempDir, 'missing.yaml');
 
-        const args = (execFileSync as jest.Mock).mock.calls[0][1];
-        expect(args).toContain('spec.yaml');
-        expect(args).toContain('dist/output');
+        expect(() => generate(
+            { specPath: missingSpec, outputDir },
+            { isCleanOutputEnabled: true }
+        )).toThrow(`OpenAPI input '${resolve(missingSpec)}'`);
 
-        consoleSpy.mockRestore();
+        expect(mockedExecFileSync).not.toHaveBeenCalled();
+        expect(readFileSync(existingFile, 'utf8')).toBe('valid output');
+    });
+
+    it.each([
+        ['an empty path', '', 'Output directory must not be empty'],
+        ['the current working directory', '.', 'current working directory'],
+        ['a normalized current working directory', join('nested', '..'), 'current working directory'],
+        ['the filesystem root', parse(process.cwd()).root, 'filesystem roots'],
+        ['the user home', homedir(), 'user home directory']
+    ])('rejects %s as a clean output', (_description, unsafeOutput, expectedMessage) => {
+        expect(() => generate(
+            { specPath, outputDir: unsafeOutput },
+            { isCleanOutputEnabled: true }
+        )).toThrow(expectedMessage);
+
+        expect(mockedExecFileSync).not.toHaveBeenCalled();
+    });
+
+    it('rejects a clean output that contains the OpenAPI input', () => {
+        const nestedSpec = join(outputDir, 'api', 'openapi.yaml');
+        mkdirSync(dirname(nestedSpec), { recursive: true });
+        writeFileSync(nestedSpec, 'openapi: 3.0.0');
+
+        expect(() => generate(
+            { specPath: nestedSpec, outputDir },
+            { isCleanOutputEnabled: true }
+        )).toThrow(`it contains the OpenAPI input '${resolve(nestedSpec)}'`);
+
+        expect(mockedExecFileSync).not.toHaveBeenCalled();
+        expect(readFileSync(nestedSpec, 'utf8')).toBe('openapi: 3.0.0');
+    });
+
+    it.each([
+        ['template directory', { templateDir: join(tmpdir(), 'missing-wrapper-templates') }, 'Template directory'],
+        ['generator ignore file', { generatorIgnoreFile: join(tmpdir(), 'missing-wrapper-ignore') }, 'Generator ignore file']
+    ])('validates the %s before generation', (_description, options, expectedMessage) => {
+        expect(() => generate(
+            { specPath, outputDir },
+            { ...options, isCleanOutputEnabled: true }
+        )).toThrow(expectedMessage);
+
+        expect(mockedExecFileSync).not.toHaveBeenCalled();
     });
 });
