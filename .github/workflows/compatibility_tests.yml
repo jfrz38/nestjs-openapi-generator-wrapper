@@ -9,6 +9,44 @@ permissions:
   contents: read
 
 jobs:
+  generator-version-change:
+    name: OpenAPI Generator version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect OpenAPI Generator version change
+        id: generator-version
+        uses: jfrz38/check-version-change@176c454a13e14862ec362573f26c9e9395855d0c # v1.5.0
+        with:
+          file-path: wrapper/openapitools.json
+          file-format: raw
+          compare-source: git-ref
+          compare-ref: ${{ github.event.before }}
+          compare-file-path: wrapper/openapitools.json
+          allow-missing-compare-file: true
+          version-pattern: '"generator-cli"\s*:\s*\{\s*"version"\s*:\s*"([^"]+)"'
+
+      - name: Summarize OpenAPI Generator version
+        env:
+          VERSION_CHANGED: ${{ steps.generator-version.outputs.changed }}
+          LOCAL_VERSION: ${{ steps.generator-version.outputs.local-version }}
+          COMPARED_VERSION: ${{ steps.generator-version.outputs.compared-version }}
+          COMPARE_REF: ${{ steps.generator-version.outputs.compare-ref-resolved }}
+        run: |
+          {
+            echo '### OpenAPI Generator version'
+            echo
+            echo "- Changed: \`$VERSION_CHANGED\`"
+            echo "- Current version: \`$LOCAL_VERSION\`"
+            echo "- Previous version: \`${COMPARED_VERSION:-not present}\`"
+            echo "- Compared ref: \`$COMPARE_REF\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   compatibility-smoke:
     name: Node ${{ matrix.node }}, Java ${{ matrix.java }}
     runs-on: ubuntu-latest
