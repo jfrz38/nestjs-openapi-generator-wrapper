@@ -1,0 +1,75 @@
+openapi: 3.0.3
+info:
+  title: Controller Contract Integration Test
+  version: 1.0.0
+
+paths:
+  /widgets/{widgetId}:
+    get:
+      tags: [Widgets]
+      summary: Get a widget without closing the generated comment */ unexpectedly
+      operationId: getWidget
+      parameters:
+        - name: widgetId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ratio
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+        - name: enabled
+          in: query
+          required: true
+          schema:
+            type: boolean
+        - name: X-Retry-Count
+          in: header
+          required: false
+          schema:
+            type: integer
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [strict]
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /jobs/{jobId}:
+    delete:
+      tags: [Widgets]
+      operationId: deleteJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /health:
+    head:
+      tags: [Widgets]
+      operationId: headHealth
+      responses:
+        "204":
+          description: Healthy
+    options:
+      tags: [Widgets]
+      operationId: optionsHealth
+      responses:
+        "204":
+          description: Options available

@@ -11,6 +11,7 @@ import {
 import { homedir } from 'os';
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from 'path';
 import { DefaultConfig } from './config/default-config';
+import { assertSupportedControllerContract } from './contract/validate-controller-contract';
 import { OptionalOptions, RequiredOptions } from './types/types';
 
 type ResolvedOptions = Required<OptionalOptions> & RequiredOptions & {
@@ -49,6 +50,7 @@ function resolveAndValidateOptions(
     const runtimePath = resolve(process.execPath);
 
     assertFile(specPath, 'OpenAPI input', outputDir);
+    assertSupportedControllerContract(specPath, outputDir);
     assertDirectory(templateDir, 'Template directory', outputDir);
     assertFile(generatorIgnoreFile, 'Generator ignore file', outputDir);
     assertFile(generatorConfigPath, 'OpenAPI Generator configuration', outputDir);

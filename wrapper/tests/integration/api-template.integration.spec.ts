@@ -1,6 +1,10 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import 'reflect-metadata';
+import { execFileSync } from 'child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { tmpdir } from 'os';
+import * as Nest from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { generate } from '../../src/index';
 
 const describeIntegration = process.env.RUN_OPENAPI_INTEGRATION === 'true' ? describe : describe.skip;
@@ -73,14 +77,118 @@ describeIntegration('template integration', () => {
         process.env[name] = value;
     }
 
+    function compileGeneratedOutput(outputDir: string) {
+        const compiledDir = join(outputDir, 'compiled');
+        const tsconfigPath = join(outputDir, 'tsconfig.json');
+        symlinkSync(resolve(__dirname, '../../node_modules'), join(outputDir, 'node_modules'), 'junction');
+        writeFileSync(tsconfigPath, JSON.stringify({
+            compilerOptions: {
+                target: 'ES2022',
+                module: 'Node16',
+                moduleResolution: 'Node16',
+                outDir: compiledDir,
+                rootDir: '.',
+                strict: true,
+                noUnusedLocals: true,
+                experimentalDecorators: true,
+                emitDecoratorMetadata: true,
+                esModuleInterop: true,
+                skipLibCheck: true
+            },
+            include: ['api/**/*.ts', 'model/**/*.ts']
+        }, null, 2));
+
+        execFileSync(process.execPath, [require.resolve('typescript/bin/tsc6'), '--project', tsconfigPath], {
+            cwd: outputDir,
+            stdio: 'inherit'
+        });
+        return compiledDir;
+    }
+
     it('generates enum query params using the enum-aware TypeScript type', () => {
         const outputDir = generateFixtureOutput('query-enum.openapi.yml');
         const generatedApi = readFileSync(join(outputDir, 'api', 'reports.api.ts'), 'utf8');
 
+        expect(generatedApi).toContain(`import * as Nest from '@nestjs/common';`);
         expect(generatedApi).toContain(`import type { Request, Response } from 'express';`);
         expect(generatedApi).toContain(`protected abstract listReports(visibility: 'private' | 'shared' | undefined, request: Request, response: Response): void | Promise<void>;`);
-        expect(generatedApi).toContain(`private doListReports(@Query("visibility") visibility: 'private' | 'shared' | undefined, @Req() request: Request, @Res({ passthrough: true }) response: Response): void | Promise<void> {`);
+        expect(generatedApi).toContain(`@Nest.Query("visibility"`);
+        expect(generatedApi).toContain(`visibility: 'private' | 'shared' | undefined`);
         expect(generatedApi).not.toContain(`VisibilityEnum`);
+    });
+
+    it('compiles controllers strictly and preserves their runtime HTTP contract', async () => {
+        const outputDir = generateFixtureOutput('controller-contract.openapi.yml');
+        const generatedApi = readFileSync(join(outputDir, 'api', 'widgets.api.ts'), 'utf8');
+
+        expect(generatedApi).toContain('new Nest.ParseIntPipe({ optional: false })');
+        expect(generatedApi).toContain('new Nest.ParseFloatPipe({ optional: true })');
+        expect(generatedApi).toContain('new Nest.ParseBoolPipe({ optional: false })');
+        expect(generatedApi).toContain('@Nest.HttpCode(202)');
+        expect(generatedApi).toContain('@Nest.HttpCode(204)');
+        expect(generatedApi).toContain('return Nest.Head(path);');
+        expect(generatedApi).toContain('return Nest.Options(path);');
+        expect(generatedApi).not.toContain('let mode =');
+        expect(generatedApi).not.toContain('*/ unexpectedly');
+
+        const compiledDir = compileGeneratedOutput(outputDir);
+        const { WidgetsApi } = require(join(compiledDir, 'api', 'widgets.api.js')) as { WidgetsApi: new () => object };
+        let receivedParameters: unknown[] = [];
+        let headCalled = false;
+        let optionsCalled = false;
+
+        class WidgetsController extends WidgetsApi {
+            deleteJob() {}
+
+            getWidget(...parameters: unknown[]) {
+                receivedParameters = parameters;
+                return { accepted: true };
+            }
+
+            headHealth() {
+                headCalled = true;
+            }
+
+            optionsHealth() {
+                optionsCalled = true;
+            }
+        }
+        Nest.Controller()(WidgetsController);
+
+        class TestModule {}
+        Nest.Module({ controllers: [WidgetsController] })(TestModule);
+        const app = await NestFactory.create(TestModule, { logger: false });
+
+        try {
+            await app.listen(0, '127.0.0.1');
+            const baseUrl = await app.getUrl();
+            const accepted = await fetch(`${baseUrl}/widgets/42?enabled=true&mode=strict&ratio=1.5`, {
+                headers: { 'X-Retry-Count': '3' }
+            });
+
+            expect(accepted.status).toBe(202);
+            expect(await accepted.json()).toEqual({ accepted: true });
+            expect(receivedParameters.slice(0, 5)).toEqual([42, true, 'strict', 1.5, 3]);
+
+            expect((await fetch(`${baseUrl}/widgets/42?mode=strict`)).status).toBe(400);
+            expect((await fetch(`${baseUrl}/widgets/42?enabled=not-a-boolean&mode=strict`)).status).toBe(400);
+            expect((await fetch(`${baseUrl}/jobs/job-1`, { method: 'DELETE' })).status).toBe(204);
+            expect((await fetch(`${baseUrl}/health`, { method: 'HEAD' })).status).toBe(204);
+            expect((await fetch(`${baseUrl}/health`, { method: 'OPTIONS' })).status).toBe(204);
+            expect(headCalled).toBe(true);
+            expect(optionsCalled).toBe(true);
+        } finally {
+            await app.close();
+        }
+    }, 30_000);
+
+    it.each([
+        ['cookie-parameter.openapi.yml', 'cookie parameters require application-specific cookie middleware'],
+        ['form-body.openapi.yml', "'application/x-www-form-urlencoded' request bodies require application-specific middleware"],
+        ['multipart-body.openapi.yml', "'multipart/form-data' request bodies require application-specific middleware"],
+        ['trace-method.openapi.yml', 'TRACE operations are not supported']
+    ])('rejects unsupported controller contract in %s', (specName, expectedMessage) => {
+        expect(() => generateFixtureOutput(specName)).toThrow(expectedMessage);
     });
 
     it('generates array validation decorators for list properties', () => {

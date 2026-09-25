@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: Unsupported Form Body
+  version: 1.0.0
+paths:
+  /forms:
+    post:
+      tags: [Forms]
+      operationId: submitForm
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "204":
+          description: Submitted
