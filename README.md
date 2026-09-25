@@ -75,6 +75,11 @@ Note that generator (i.e. `-g`) will be always `typescript-nestjs`.
 
 ## Installation
 
+Requirements:
+
+- Node.js 24 or newer.
+- Java 11 or newer. CI verifies generation with JDK 17.
+
 Using `npm`:
 
 ```bash
@@ -82,6 +87,8 @@ npm install -D @jfrz38/nestjs-open-api-generator-wrapper
 ```
 
 This wrapper is a development-time code generation tool, so it should be installed as a dev dependency.
+
+The package pins both parts of the generator toolchain: npm launcher `@openapitools/openapi-generator-cli` 2.41.0 and Java OpenAPI Generator 7.14.0. The wrapper always passes its packaged generator configuration explicitly, so an `openapitools.json` in the consuming project cannot change the Java generator version or be created as a generation side effect.
 
 ## Usage
 
@@ -128,6 +135,16 @@ Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
 !api/
 !model/
 ```
+
+## Upgrading OpenAPI Generator
+
+Generator upgrades are intentional because a new Java generator version can change emitted source code:
+
+1. Change the version in `wrapper/openapitools.json`.
+2. If the npm launcher also needs an upgrade, update `wrapper/package.json` and `wrapper/pnpm-lock.yaml` with pnpm.
+3. Run `make build`, `make test`, and `make test-integration`.
+4. Review all generated-output and integration-expectation changes before accepting them.
+5. Run `make generate-example` only after accepting the new output, then commit the configuration, tests, and intentional generated changes together.
 
 ## Why I use it
 

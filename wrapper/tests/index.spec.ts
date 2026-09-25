@@ -65,8 +65,12 @@ describe('generate', () => {
         const [runtime, args, spawnOptions] = mockedExecFileSync.mock.calls[0] as [string, string[], object];
         expect(runtime).toBe(process.execPath);
         expect(args[0]).toMatch(/[\\/]@openapitools[\\/]openapi-generator-cli[\\/]main\.js$/);
+        expect(args.slice(1, 4)).toEqual([
+            '--openapitools',
+            resolve(__dirname, '..', 'openapitools.json'),
+            'generate'
+        ]);
         expect(args).toEqual(expect.arrayContaining([
-            'generate',
             '-i', resolve(specPath),
             '-o', resolve(outputDir),
             '-t', resolve(templateDir),

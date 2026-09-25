@@ -5,6 +5,8 @@ const { join } = require('path');
 
 const packageRoot = join(__dirname, '..');
 const packageJson = require(join(packageRoot, 'package.json'));
+const generatorConfig = require(join(packageRoot, 'openapitools.json'));
+const shouldGenerate = process.argv.includes('--generate');
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'nestjs-openapi-wrapper-package-'));
 const packDirectory = join(temporaryRoot, 'pack');
 const consumerDirectory = join(temporaryRoot, 'consumer');
@@ -26,6 +28,48 @@ function runNpm(args, options = {}) {
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
+}
+
+function runGenerationSmoke(installedPackageRoot) {
+    const specPath = join(consumerDirectory, 'openapi.yaml');
+    const outputDirectory = join(consumerDirectory, 'generated');
+    const ignoreFile = join(consumerDirectory, '.openapi-generator-ignore');
+    writeFileSync(specPath, [
+        'openapi: 3.0.3',
+        'info:',
+        '  title: Compatibility smoke',
+        '  version: 1.0.0',
+        'paths:',
+        '  /health:',
+        '    get:',
+        '      operationId: getHealth',
+        '      tags: [Health]',
+        '      responses:',
+        "        '204':",
+        '          description: Healthy',
+        ''
+    ].join('\n'));
+    writeFileSync(ignoreFile, '');
+
+    execFileSync(process.execPath, [
+        join(installedPackageRoot, 'dist', 'bin', 'generate.js'),
+        '--input', specPath,
+        '--output', outputDirectory,
+        '--ignore-file-override', ignoreFile,
+        '--global-property', 'apis,models,supportingFiles'
+    ], {
+        cwd: consumerDirectory,
+        env: { ...process.env, PWD: consumerDirectory, INIT_CWD: consumerDirectory },
+        stdio: 'inherit'
+    });
+
+    assert(existsSync(join(outputDirectory, 'api', 'health.api.ts')), 'Compatibility smoke did not generate the expected API file.');
+    const generatedVersion = readFileSync(join(outputDirectory, '.openapi-generator', 'VERSION'), 'utf8').trim();
+    assert(
+        generatedVersion === generatorConfig['generator-cli'].version,
+        `Compatibility smoke used OpenAPI Generator '${generatedVersion}' instead of '${generatorConfig['generator-cli'].version}'.`
+    );
+    assert(!existsSync(join(consumerDirectory, 'openapitools.json')), 'Compatibility smoke created a consumer openapitools.json.');
 }
 
 try {
@@ -52,6 +96,7 @@ try {
         'package.json',
         'README.md',
         'LICENSE',
+        'openapitools.json',
         'dist/index.js',
         'dist/index.d.ts',
         'dist/bin/generate.js',
@@ -66,7 +111,7 @@ try {
     }
 
     const unexpectedFile = packedFiles.find((file) =>
-        !['package.json', 'README.md', 'LICENSE'].includes(file) && !file.startsWith('dist/')
+        !['package.json', 'README.md', 'LICENSE', 'openapitools.json'].includes(file) && !file.startsWith('dist/')
     );
     assert(!unexpectedFile, `Packed package contains unexpected file '${unexpectedFile}'.`);
     assert(
@@ -109,8 +154,14 @@ try {
         existsSync(join(installedPackageRoot, 'dist', 'templates', 'api.service.mustache')),
         'Installed package is missing runtime templates.'
     );
+    const installedGeneratorConfig = JSON.parse(readFileSync(join(installedPackageRoot, 'openapitools.json'), 'utf8'));
+    assert(
+        installedGeneratorConfig['generator-cli']?.version === generatorConfig['generator-cli']?.version,
+        `Installed package is missing the pinned OpenAPI Generator version '${generatorConfig['generator-cli']?.version}'.`
+    );
 
     runNpm(['run', 'smoke:cli', '--silent'], { cwd: consumerDirectory });
+    if (shouldGenerate) runGenerationSmoke(installedPackageRoot);
     console.log('Package smoke test passed.');
 } finally {
     execFileSync(process.execPath, [join(__dirname, 'stage-package-docs.js'), '--clean']);

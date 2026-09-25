@@ -14,6 +14,7 @@ import { DefaultConfig } from './config/default-config';
 import { OptionalOptions, RequiredOptions } from './types/types';
 
 type ResolvedOptions = Required<OptionalOptions> & RequiredOptions & {
+    generatorConfigPath: string;
     generatorPath: string;
 };
 
@@ -44,11 +45,13 @@ function resolveAndValidateOptions(
     const specPath = resolveRequiredPath(mandatoryOptions.specPath, 'OpenAPI input', outputDir);
     const templateDir = resolveRequiredPath(optionalOptions.templateDir, 'Template directory', outputDir);
     const generatorIgnoreFile = resolveRequiredPath(optionalOptions.generatorIgnoreFile, 'Generator ignore file', outputDir);
+    const generatorConfigPath = resolve(__dirname, '..', 'openapitools.json');
     const runtimePath = resolve(process.execPath);
 
     assertFile(specPath, 'OpenAPI input', outputDir);
     assertDirectory(templateDir, 'Template directory', outputDir);
     assertFile(generatorIgnoreFile, 'Generator ignore file', outputDir);
+    assertFile(generatorConfigPath, 'OpenAPI Generator configuration', outputDir);
     assertFile(runtimePath, 'Node.js runtime', outputDir);
 
     let generatorPath: string;
@@ -69,6 +72,7 @@ function resolveAndValidateOptions(
         outputDir,
         templateDir,
         generatorIgnoreFile,
+        generatorConfigPath,
         generatorPath
     };
 }
@@ -205,6 +209,7 @@ function removeTemporaryDirectory(directoryPath: string) {
 function runGenerator(options: ResolvedOptions, outputDir: string) {
     const cmdArguments = [
         options.generatorPath,
+        '--openapitools', options.generatorConfigPath,
         'generate',
         '-i', options.specPath,
         '-g', 'typescript-nestjs',
