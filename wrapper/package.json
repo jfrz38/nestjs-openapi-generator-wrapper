@@ -11,15 +11,31 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "nestjs-openapi-wrapper": "./dist/src/bin/generate.js"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
+  "bin": {
+    "nestjs-openapi-wrapper": "./dist/bin/generate.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc && npm run copy-templates",
-    "copy-templates": "copyfiles -u 1 src/**/*.mustache dist/src",
-    "generate": "node ./dist/src/bin/generate.js",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/copy-runtime-assets.js",
+    "generate": "node ./dist/bin/generate.js",
     "prepare": "npm run build",
-    "test": "jest",
+    "stage:package-docs": "node scripts/stage-package-docs.js",
+    "postpublish": "node scripts/stage-package-docs.js --clean",
+    "test": "npm run test:unit && npm run test:package",
+    "test:unit": "jest --runInBand",
+    "test:package": "node scripts/package-smoke.js",
     "test-coverage": "jest --coverage"
   },
   "keywords": [
@@ -43,7 +59,6 @@
     "@typescript/native": "npm:typescript@7.0.2",
     "@types/jest": "30.0.0",
     "@types/node": "24.13.3",
-    "copyfiles": "2.4.1",
     "jest": "30.4.2",
     "ts-jest": "29.4.12",
     "ts-node": "10.9.2",

@@ -14,8 +14,8 @@ build: ## compile the wrapper package
 	cd $(CODE_PATH) && pnpm run build
 
 .PHONY: test
-test: ## run unit tests in the wrapper
-	cd $(CODE_PATH) && pnpm exec jest --runInBand
+test: ## run unit tests and package smoke test in the wrapper
+	cd $(CODE_PATH) && pnpm test
 
 .PHONY: test-integration
 test-integration: ## run integration tests against example OpenAPI input
@@ -27,7 +27,7 @@ test-integration-keep: ## run integration test and preserve generated output
 
 .PHONY: generate-example
 generate-example: ## build the wrapper and generate example client code
-	cd $(CODE_PATH) && pnpm run build && node ./dist/src/bin/generate.js -i ../example/openapi.yml -o ../example/generated
+	cd $(CODE_PATH) && pnpm run build && node ./dist/bin/generate.js -i ../example/openapi.yml -o ../example/generated
 
 .PHONY: clean-example-generated 
 clean-example-generated: ## remove generated example output

@@ -88,9 +88,6 @@ jobs:
             exit 1
           fi
 
-      - name: Copy README from root
-        run: cp ../README.md ./README.md
-
       - name: Install pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
@@ -112,6 +109,9 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      - name: Stage package documentation
+        run: pnpm run stage:package-docs
 
       - name: Publish to npm
         run: npm publish --access public
