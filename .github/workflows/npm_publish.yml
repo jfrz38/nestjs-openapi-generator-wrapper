@@ -68,7 +68,7 @@ jobs:
 
       - id: version-check
         name: Check version is not already published
-        uses: jfrz38/check-version-change@v1.3.0
+        uses: jfrz38/check-version-change@v1.4.0
         with:
           file-path: wrapper/package.json
           package-name: '@jfrz38/nestjs-open-api-generator-wrapper'
@@ -89,7 +89,7 @@ jobs:
           fi
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.10
+        uses: pnpm/action-setup@v6.1.0
         with:
           package_json_file: wrapper/package.json
 
