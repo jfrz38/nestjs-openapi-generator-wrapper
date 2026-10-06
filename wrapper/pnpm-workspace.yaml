@@ -4,4 +4,5 @@ saveExact: true
 allowBuilds:
   '@nestjs/core': true
   '@openapitools/openapi-generator-cli': true
+  '@parcel/watcher': false
   unrs-resolver: true
