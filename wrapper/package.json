@@ -64,15 +64,15 @@
     "@nestjs/platform-express": "11.2.1",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.13.3",
+    "@types/node": "24.13.6",
     "@typescript/native": "npm:typescript@7.0.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.4",
     "express": "5.2.1",
-    "jest": "30.4.2",
+    "jest": "30.5.2",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "ts-jest": "29.4.12",
+    "ts-jest": "29.4.13",
     "ts-node": "10.9.2",
     "typescript": "npm:@typescript/typescript6@6.0.2"
   }
