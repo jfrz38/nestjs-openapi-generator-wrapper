@@ -70,8 +70,11 @@ describe('generate', () => {
             resolve(__dirname, '..', 'openapitools.json'),
             'generate'
         ]);
+        const generatorSpecPath = process.platform === 'win32'
+            ? resolve(specPath).replace(/\\/g, '/')
+            : resolve(specPath);
         expect(args).toEqual(expect.arrayContaining([
-            '-i', resolve(specPath),
+            '-i', generatorSpecPath,
             '-o', resolve(outputDir),
             '-t', resolve(templateDir),
             '--additional-properties=ap',

@@ -209,11 +209,14 @@ function removeTemporaryDirectory(directoryPath: string) {
 }
 
 function runGenerator(options: ResolvedOptions, outputDir: string) {
+    const generatorSpecPath = process.platform === 'win32'
+        ? options.specPath.replace(/\\/g, '/')
+        : options.specPath;
     const cmdArguments = [
         options.generatorPath,
         '--openapitools', options.generatorConfigPath,
         'generate',
-        '-i', options.specPath,
+        '-i', generatorSpecPath,
         '-g', 'typescript-nestjs',
         '-o', outputDir,
         '-t', options.templateDir,
