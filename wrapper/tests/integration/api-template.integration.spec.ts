@@ -210,6 +210,13 @@ describeIntegration('template integration', () => {
         expect(generatedModel).toContain(`readonly sessionId: UUID;`);
     });
 
+    it('generates OpenAPI 3.1 specs with local file references from absolute paths', () => {
+        const outputDir = generateFixtureOutput('referenced-model.openapi.yml');
+        const generatedModel = readFileSync(join(outputDir, 'model', 'referencedPayload.dto.ts'), 'utf8');
+
+        expect(generatedModel).toContain(`readonly id: string;`);
+    });
+
     it('generates inline model enums without wrapping them in a namespace', () => {
         const outputDir = generateFixtureOutput('inline-enum-model.openapi.yml');
         const generatedModel = readFileSync(join(outputDir, 'model', 'userPreferences.dto.ts'), 'utf8');
