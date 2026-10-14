@@ -48,7 +48,7 @@ Notes about [**generated controllers**](./generated/api/products.api.ts):
 - Controllers **automatically generate the routes**, so you don't need to decorate each method with the corresponding path. Your entire application entry-point is defined by OpenAPI and can't be implemented using a wrong path.
 - Controllers enforce **required fields** so they can never be neither `null` nor `undefined`.
 - Controllers use NestJS `ValidationPipe` so models are validated when they are created.
-- `Request` and `Response` are always optionals so there is no need to implement them if they are not going to be used.
+- `Request` and `Response` are required trailing parameters in the generated protected contract. An override can omit them when unused, as shown above.
 
 Notes about [**generated DTOs**](./generated/model/user.dto.ts):
 

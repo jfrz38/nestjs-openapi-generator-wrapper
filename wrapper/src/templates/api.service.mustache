@@ -1,7 +1,7 @@
 {{>licenseInfo}}
 /* tslint:disable:no-unused-variable member-ordering */
 
-import { Controller, Get, Post, Put, Delete, Patch, UsePipes, ValidationPipe, Body, Param, Query, Headers, Req, Res } from "@nestjs/common";
+import * as Nest from '@nestjs/common';
 import type { Request, Response } from 'express';
 {{#imports}}
 import { {{classname}} } from '../{{filename}}';
@@ -13,8 +13,8 @@ import { {{classname}} } from '../{{filename}}';
  * {{&description}}
  */
 {{/description}}
-@Controller()
-@UsePipes(ValidationPipe)
+@Nest.Controller()
+@Nest.UsePipes(Nest.ValidationPipe)
 export abstract class {{classname}} {
 
   {{#operations}}
@@ -32,19 +32,16 @@ export abstract class {{classname}} {
      * @param {{paramName}} {{description}}
      {{/allParams}}
      */
-    @{{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}()
-    private do{{#lambda.pascalcase}}{{{operationId}}}{{/lambda.pascalcase}}({{#allParams}}{{#isPathParam}}@Param("{{baseName}}") {{/isPathParam}}{{#isQueryParam}}@Query("{{baseName}}") {{/isQueryParam}}{{#isHeaderParam}}@Headers("{{baseName}}") {{/isHeaderParam}}{{#isBodyParam}}@Body() {{/isBodyParam}}{{paramName}}: {{{dataType}}}{{^required}} | undefined{{/required}}, {{/allParams}}@Req() request: Request, @Res({ passthrough: true }) response: Response): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} | Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    {{#responses}}{{#is2xx}}@Nest.HttpCode({{{code}}})
+    {{/is2xx}}{{/responses}}@{{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}()
+    async do{{#lambda.pascalcase}}{{{operationId}}}{{/lambda.pascalcase}}({{#allParams}}{{>parameterDecorator}}{{paramName}}: {{{dataType}}}{{^required}} | undefined{{/required}}, {{/allParams}}@Nest.Req() request: Request, @Nest.Res({ passthrough: true }) response: Response): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
       {{#allParams}}
+      {{#isHeaderParam}}{{>primitiveParameterConversion}}{{/isHeaderParam}}
       {{#required}}
-        {{#isConstEnumParam}}
-        let {{paramName}} = {{{dataType}}};
-        {{/isConstEnumParam}}
-        {{^isConstEnumParam}}
         if ({{paramName}} === null || {{paramName}} === undefined) {
-            throw new Error('Required parameter {{paramName}} was null or undefined when calling {{nickname}}.');
+            throw new Nest.BadRequestException('Required parameter {{paramName}} was null or undefined when calling {{nickname}}.');
         }
 
-        {{/isConstEnumParam}}
       {{/required}}
       {{/allParams}}
       return this.{{operationId}}({{#allParams}}{{paramName}}, {{/allParams}}request, response);
@@ -61,7 +58,7 @@ export abstract class {{classname}} {
 {{#operation}}
 function {{#lambda.pascalcase}}{{{operationId}}}Path{{/lambda.pascalcase}}(): MethodDecorator {
     const path: string = "{{{path}}}".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
-    return {{#lambda.pascalcase}}{{{httpMethod}}}{{/lambda.pascalcase}}(path);
+    return Nest.{{#lambda.pascalcase}}{{{httpMethod}}}{{/lambda.pascalcase}}(path);
 }
 
 {{/operation}}

@@ -58,6 +58,10 @@ And also please note the following restrictions when using this wrapper:
 - Generated controllers use `Express` under the hood, so Express-related decorators and behaviors apply.
 - Validation exists for all DTOs.
 - Generated controllers expose one abstract method for each path that must be implemented, otherwise the code will not compile.
+- Integer, number, and boolean path, query, and header parameters are converted from their HTTP string representation. Missing or invalid required parameters return HTTP 400.
+- A single concrete `2xx` response status is applied to the route. Operations with multiple successful statuses or a wildcard `2XX` response are rejected because one static NestJS handler cannot select between them.
+- `HEAD` and `OPTIONS` operations are supported. `TRACE`, cookie parameters, multipart bodies, and URL-encoded form bodies are rejected before generation because they require application-specific NestJS or Express wiring.
+- The generated protected methods always receive `Request` and `Response` as the final required parameters. An override may omit unused trailing parameters, but implementations that declare them must use the generated order and types.
 
 **⚠️ At this moment the wrapper output is equivalent to use:**
 
