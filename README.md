@@ -62,6 +62,9 @@ And also please note the following restrictions when using this wrapper:
 - A single concrete `2xx` response status is applied to the route. Operations with multiple successful statuses or a wildcard `2XX` response are rejected because one static NestJS handler cannot select between them.
 - `HEAD` and `OPTIONS` operations are supported. `TRACE`, cookie parameters, multipart bodies, and URL-encoded form bodies are rejected before generation because they require application-specific NestJS or Express wiring.
 - The generated protected methods always receive `Request` and `Response` as the final required parameters. An override may omit unused trailing parameters, but implementations that declare them must use the generated order and types.
+- Generated DTOs distinguish integers from other numbers, enforce enum membership, validate array elements, and preserve `uniqueItems` as an array with uniqueness validation.
+- Optional non-nullable DTO properties may be omitted but reject an explicit `null`. Nullable properties accept `null`, and required properties are emitted with strict-property-initialization-safe declarations.
+- Nested DTO validation applies when nested values are DTO instances, as expected by `class-validator`; applications constructing DTOs from plain objects must configure their transformation strategy accordingly.
 
 **⚠️ At this moment the wrapper output is equivalent to use:**
 
