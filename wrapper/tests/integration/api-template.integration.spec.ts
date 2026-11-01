@@ -304,8 +304,18 @@ describeIntegration('template integration', () => {
         const outputDir = generateFixtureOutput('uuid-model.openapi.yml');
         const generatedModel = readFileSync(join(outputDir, 'model', 'createSession.dto.ts'), 'utf8');
 
+        expect(generatedModel).toContain(`import type { UUID as UuidForSessionId } from 'node:crypto';`);
+        expect(generatedModel).toContain(`import type { UUID as UuidForCorrelationId } from 'node:crypto';`);
+        expect(generatedModel).toContain(`import type { UUID as UuidForOptionalSessionId } from 'node:crypto';`);
+        expect(generatedModel).toContain(`import type { UUID as UuidForRelatedIdsItem } from 'node:crypto';`);
+        expect(generatedModel).not.toContain(`import('node:crypto').UUID`);
         expect(generatedModel).toContain(`@Validator.IsUUID()`);
-        expect(generatedModel).toContain(`readonly sessionId!: import('node:crypto').UUID;`);
+        expect(generatedModel).toContain(`@Validator.IsUUID(undefined, { each: true })`);
+        expect(generatedModel).toContain(`readonly sessionId!: UuidForSessionId;`);
+        expect(generatedModel).toContain(`readonly optionalSessionId?: UuidForOptionalSessionId;`);
+        expect(generatedModel).toContain(`readonly relatedIds!: Array<UuidForRelatedIdsItem>;`);
+
+        compileGeneratedOutput(outputDir);
     });
 
     it('generates OpenAPI 3.1 specs with local file references from absolute paths', () => {

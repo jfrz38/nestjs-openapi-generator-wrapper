@@ -25,7 +25,20 @@ components:
       type: object
       required:
         - sessionId
+        - correlationId
+        - relatedIds
       properties:
         sessionId:
           type: string
           format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        optionalSessionId:
+          type: string
+          format: uuid
+        relatedIds:
+          type: array
+          items:
+            type: string
+            format: uuid

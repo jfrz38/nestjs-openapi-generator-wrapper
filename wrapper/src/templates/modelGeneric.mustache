@@ -1,6 +1,9 @@
 {{#hasVars}}import * as Validator from 'class-validator';
 
-{{/hasVars}}interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
+{{/hasVars}}{{#vars}}{{#isUuid}}import type { UUID as UuidFor{{nameInPascalCase}} } from 'node:crypto';
+{{/isUuid}}{{#isArray}}{{#items}}{{#isUuid}}import type { UUID as UuidFor{{nameInPascalCase}}Item } from 'node:crypto';
+{{/isUuid}}{{/items}}{{/isArray}}{{/vars}}
+interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
 {{#vars}}
     {{#description}}
     /**
