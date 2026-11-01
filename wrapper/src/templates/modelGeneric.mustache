@@ -1,30 +1,13 @@
-import { 
-    IsBoolean,
-    IsDateString,
-    IsString,
-    IsOptional,
-    IsUUID,
-    IsNumber,
-    IsArray,
-    MinLength,
-    MaxLength,
-    Min,
-    Max,
-    IsEmail,
-    Matches,
-    ArrayMinSize,
-    ArrayMaxSize
-} from 'class-validator';
-import type { UUID } from 'node:crypto';
+{{#hasVars}}import * as Validator from 'class-validator';
 
-interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
+{{/hasVars}}interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} { {{>modelGenericAdditionalProperties}}
 {{#vars}}
     {{#description}}
     /**
      * {{{.}}}
      */
     {{/description}}
-    {{#isReadOnly}}readonly {{/isReadOnly}}{{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}: {{#isEnum}}{{classname}}{{enumName}}{{/isEnum}}{{^isEnum}}{{^isUuid}}{{{dataType}}}{{/isUuid}}{{#isUuid}}UUID{{/isUuid}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}};
+    {{#isReadOnly}}readonly {{/isReadOnly}}{{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}: {{>modelPropertyType}}
 {{/vars}}
 }
 
@@ -32,8 +15,8 @@ interface I{{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^
 
 export class {{classname}} implements I{{classname}} {
     {{#vars}}
-    {{#minLength}}@MinLength({{minLength}}) {{/minLength}}{{#maxLength}}@MaxLength({{maxLength}}) {{/maxLength}}{{^required}}@IsOptional() {{/required}}{{#isUuid}}@IsUUID() {{/isUuid}}{{#isString}}{{^isUuid}}@IsString() {{/isUuid}}{{/isString}}{{#isInteger}}@IsNumber() {{/isInteger}}{{#isBoolean}}@IsBoolean() {{/isBoolean}}{{#isArray}}{{^uniqueItems}}@IsArray() {{/uniqueItems}}{{/isArray}}{{#minimum}}@Min({{minimum}}) {{/minimum}}{{#maximum}}@Max({{maximum}}) {{/maximum}}{{#isDateTime}}@IsDateString() {{/isDateTime}}{{#isEmail}}@IsEmail() {{/isEmail}}{{#pattern}}@Matches({{pattern}}) {{/pattern}}{{#minItems}}@ArrayMinSize({{minItems}}) {{/minItems}}{{#maxItems}}@ArrayMaxSize({{maxItems}}) {{/maxItems}}
-    readonly {{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}: {{#isEnum}}{{classname}}{{enumName}}{{/isEnum}}{{^isEnum}}{{^isUuid}}{{{dataType}}}{{/isUuid}}{{#isUuid}}UUID{{/isUuid}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}};
+    {{>modelValidationDecorators}}
+    readonly {{#hasSanitizedName}}'{{{baseName}}}'{{/hasSanitizedName}}{{^hasSanitizedName}}{{{name}}}{{/hasSanitizedName}}{{^required}}?{{/required}}{{#required}}!{{/required}}: {{>modelPropertyType}}
 
 {{/vars}}
 }

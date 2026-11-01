@@ -5,6 +5,7 @@ import { join, resolve } from 'path';
 import { tmpdir } from 'os';
 import * as Nest from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { validate } from 'class-validator';
 import { generate } from '../../src/index';
 
 const describeIntegration = process.env.RUN_OPENAPI_INTEGRATION === 'true' ? describe : describe.skip;
@@ -182,6 +183,103 @@ describeIntegration('template integration', () => {
         }
     }, 30_000);
 
+    it('compiles DTOs strictly and enforces OpenAPI validation constraints', async () => {
+        const outputDir = generateFixtureOutput('dto-validation.openapi.yml');
+        const generatedModel = readFileSync(join(outputDir, 'model', 'validationSample.dto.ts'), 'utf8');
+        const generatedDictionary = readFileSync(join(outputDir, 'model', 'dictionaryContainer.dto.ts'), 'utf8');
+
+        expect(generatedModel).toContain('@Validator.IsInt()');
+        expect(generatedModel).toContain('@Validator.IsNumber()');
+        expect(generatedModel).toContain(`@Validator.IsIn(['draft', 'published'])`);
+        expect(generatedModel).toContain('@Validator.IsArray() @Validator.ArrayUnique() @Validator.IsString({ each: true })');
+        expect(generatedModel).toContain(`@Validator.IsIn(['automatic', 'manual'], { each: true })`);
+        expect(generatedModel).toContain('@Validator.IsInt({ each: true })');
+        expect(generatedModel).toContain('@Validator.ValidateNested()');
+        expect(generatedModel).toContain('@Validator.ValidateNested({ each: true })');
+        expect(generatedModel).toContain(`readonly labels!: Array<string>;`);
+        expect(generatedModel).toContain(`readonly count!: number;`);
+        expect(generatedModel).toContain(`@Validator.Matches(/^[A-Z]+\\/[0-9]+$/)`);
+        expect(generatedDictionary.match(/values!?: \{ \[key: string\]: number; \};/gu)).toHaveLength(2);
+
+        const compiledDir = compileGeneratedOutput(outputDir);
+        const {
+            ValidationSampleDto
+        } = require(join(compiledDir, 'model', 'validationSample.dto.js')) as {
+            ValidationSampleDto: new () => Record<string, unknown>;
+        };
+        const { ChildDto } = require(join(compiledDir, 'model', 'child.dto.js')) as {
+            ChildDto: new () => Record<string, unknown>;
+        };
+        const { DerivedRecordDto } = require(join(compiledDir, 'model', 'derivedRecord.dto.js')) as {
+            DerivedRecordDto: new () => Record<string, unknown>;
+        };
+
+        const child = (overrides: Record<string, unknown> = {}) => Object.assign(
+            new ChildDto(),
+            { name: 'valid child', age: 4 },
+            overrides
+        );
+        const sample = (overrides: Record<string, unknown> = {}) => Object.assign(
+            new ValidationSampleDto(),
+            {
+                count: 2,
+                ratio: 1.5,
+                status: 'draft',
+                externalStatus: 'published',
+                labels: ['one', 'two'],
+                modes: ['automatic'],
+                scores: [1, 2],
+                child: child(),
+                children: [child()],
+                patternValue: 'ABC/123',
+                nullableRequired: null
+            },
+            overrides
+        );
+
+        expect(await validate(sample())).toHaveLength(0);
+        expect(await validate(sample({ count: 1.5 }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'count' })
+        ]));
+        expect(await validate(sample({ status: 'archived' }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'status' })
+        ]));
+        expect(await validate(sample({ externalStatus: 'archived' }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'externalStatus' })
+        ]));
+        expect(await validate(sample({ labels: ['duplicate', 'duplicate'] }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'labels' })
+        ]));
+        expect(await validate(sample({ modes: ['unsupported'] }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'modes' })
+        ]));
+        expect(await validate(sample({ scores: [1, 1.5] }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'scores' })
+        ]));
+        expect(await validate(sample({ child: child({ age: 1.5 }) }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'child' })
+        ]));
+        expect(await validate(sample({ children: [child({ name: 42 })] }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'children' })
+        ]));
+        expect(await validate(sample({ patternValue: 'invalid' }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'patternValue' })
+        ]));
+        expect(await validate(sample({ optionalName: null }))).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'optionalName' })
+        ]));
+        expect(await validate(sample({ optionalNullable: null }))).toHaveLength(0);
+
+        const missingRequired = sample();
+        Reflect.deleteProperty(missingRequired, 'count');
+        expect(await validate(missingRequired)).toEqual(expect.arrayContaining([
+            expect.objectContaining({ property: 'count' })
+        ]));
+
+        const derived = Object.assign(new DerivedRecordDto(), { id: 'record-1', revision: 1 });
+        expect(await validate(derived)).toHaveLength(0);
+    }, 30_000);
+
     it.each([
         ['cookie-parameter.openapi.yml', 'cookie parameters require application-specific cookie middleware'],
         ['form-body.openapi.yml', "'application/x-www-form-urlencoded' request bodies require application-specific middleware"],
@@ -197,31 +295,31 @@ describeIntegration('template integration', () => {
 
         expect(generatedModel).toContain(`ArrayMinSize`);
         expect(generatedModel).toContain(`ArrayMaxSize`);
-        expect(generatedModel).toContain(`@IsArray() @ArrayMinSize(1) @ArrayMaxSize(5)`);
-        expect(generatedModel).toContain(`readonly labels: Array<string>;`);
+        expect(generatedModel).toContain(`@Validator.IsArray()`);
+        expect(generatedModel).toContain(`@Validator.ArrayMinSize(1) @Validator.ArrayMaxSize(5)`);
+        expect(generatedModel).toContain(`readonly labels!: Array<string>;`);
     });
 
     it('generates UUID properties using the current UUID typing strategy', () => {
         const outputDir = generateFixtureOutput('uuid-model.openapi.yml');
         const generatedModel = readFileSync(join(outputDir, 'model', 'createSession.dto.ts'), 'utf8');
 
-        expect(generatedModel).toContain(`import type { UUID } from 'node:crypto';`);
-        expect(generatedModel).toContain(`@IsUUID()`);
-        expect(generatedModel).toContain(`readonly sessionId: UUID;`);
+        expect(generatedModel).toContain(`@Validator.IsUUID()`);
+        expect(generatedModel).toContain(`readonly sessionId!: import('node:crypto').UUID;`);
     });
 
     it('generates OpenAPI 3.1 specs with local file references from absolute paths', () => {
         const outputDir = generateFixtureOutput('referenced-model.openapi.yml');
         const generatedModel = readFileSync(join(outputDir, 'model', 'referencedPayload.dto.ts'), 'utf8');
 
-        expect(generatedModel).toContain(`readonly id: string;`);
+        expect(generatedModel).toContain(`readonly id!: string;`);
     });
 
     it('generates inline model enums without wrapping them in a namespace', () => {
         const outputDir = generateFixtureOutput('inline-enum-model.openapi.yml');
         const generatedModel = readFileSync(join(outputDir, 'model', 'userPreferences.dto.ts'), 'utf8');
 
-        expect(generatedModel).toContain(`readonly visibility: UserPreferencesDtoVisibilityEnum;`);
+        expect(generatedModel).toContain(`readonly visibility!: UserPreferencesDtoVisibilityEnum;`);
         expect(generatedModel).toContain(`export const UserPreferencesDtoVisibilityEnum = {`);
         expect(generatedModel).toContain(`export type UserPreferencesDtoVisibilityEnum = typeof UserPreferencesDtoVisibilityEnum[keyof typeof UserPreferencesDtoVisibilityEnum];`);
         expect(generatedModel).not.toContain(`export namespace`);

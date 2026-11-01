@@ -104,7 +104,9 @@ try {
         'dist/templates/api.service.mustache',
         'dist/templates/model.mustache',
         'dist/templates/modelGeneric.mustache',
-        'dist/templates/modelGenericEnums.mustache'
+        'dist/templates/modelGenericEnums.mustache',
+        'dist/templates/modelPropertyType.mustache',
+        'dist/templates/modelValidationDecorators.mustache'
     ];
     for (const requiredFile of requiredFiles) {
         assert(packedFiles.includes(requiredFile), `Packed package is missing '${requiredFile}'.`);
