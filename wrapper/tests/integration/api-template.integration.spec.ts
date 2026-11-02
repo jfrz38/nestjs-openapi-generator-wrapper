@@ -3,8 +3,6 @@ import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { tmpdir } from 'os';
-import * as Nest from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
 import { validate } from 'class-validator';
 import { generate } from '../../src/index';
 
@@ -78,15 +76,16 @@ describeIntegration('template integration', () => {
         process.env[name] = value;
     }
 
-    function compileGeneratedOutput(outputDir: string) {
+    function compileGeneratedOutput(outputDir: string, asEsm = false) {
         const compiledDir = join(outputDir, 'compiled');
         const tsconfigPath = join(outputDir, 'tsconfig.json');
         symlinkSync(resolve(__dirname, '../../node_modules'), join(outputDir, 'node_modules'), 'junction');
+        if (asEsm) writeFileSync(join(outputDir, 'package.json'), JSON.stringify({ type: 'module' }));
         writeFileSync(tsconfigPath, JSON.stringify({
             compilerOptions: {
                 target: 'ES2022',
-                module: 'Node16',
-                moduleResolution: 'Node16',
+                module: asEsm ? 'ESNext' : 'Node16',
+                moduleResolution: asEsm ? 'Bundler' : 'Node16',
                 outDir: compiledDir,
                 rootDir: '.',
                 strict: true,
@@ -118,13 +117,14 @@ describeIntegration('template integration', () => {
         expect(generatedApi).not.toContain(`VisibilityEnum`);
     });
 
-    it('compiles controllers strictly and preserves their runtime HTTP contract', async () => {
+    it('compiles controllers strictly and preserves their runtime HTTP contract', () => {
         const outputDir = generateFixtureOutput('controller-contract.openapi.yml');
         const generatedApi = readFileSync(join(outputDir, 'api', 'widgets.api.ts'), 'utf8');
 
         expect(generatedApi).toContain('new Nest.ParseIntPipe({ optional: false })');
         expect(generatedApi).toContain('new Nest.ParseFloatPipe({ optional: true })');
         expect(generatedApi).toContain('new Nest.ParseBoolPipe({ optional: false })');
+        expect(generatedApi).toContain("xRetryCount as unknown as string, { type: 'custom' }) ?? undefined");
         expect(generatedApi).toContain('@Nest.HttpCode(202)');
         expect(generatedApi).toContain('@Nest.HttpCode(204)');
         expect(generatedApi).toContain('return Nest.Head(path);');
@@ -132,55 +132,11 @@ describeIntegration('template integration', () => {
         expect(generatedApi).not.toContain('let mode =');
         expect(generatedApi).not.toContain('*/ unexpectedly');
 
-        const compiledDir = compileGeneratedOutput(outputDir);
-        const { WidgetsApi } = require(join(compiledDir, 'api', 'widgets.api.js')) as { WidgetsApi: new () => object };
-        let receivedParameters: unknown[] = [];
-        let headCalled = false;
-        let optionsCalled = false;
-
-        class WidgetsController extends WidgetsApi {
-            deleteJob() {}
-
-            getWidget(...parameters: unknown[]) {
-                receivedParameters = parameters;
-                return { accepted: true };
-            }
-
-            headHealth() {
-                headCalled = true;
-            }
-
-            optionsHealth() {
-                optionsCalled = true;
-            }
-        }
-        Nest.Controller()(WidgetsController);
-
-        class TestModule {}
-        Nest.Module({ controllers: [WidgetsController] })(TestModule);
-        const app = await NestFactory.create(TestModule, { logger: false });
-
-        try {
-            await app.listen(0, '127.0.0.1');
-            const baseUrl = await app.getUrl();
-            const accepted = await fetch(`${baseUrl}/widgets/42?enabled=true&mode=strict&ratio=1.5`, {
-                headers: { 'X-Retry-Count': '3' }
-            });
-
-            expect(accepted.status).toBe(202);
-            expect(await accepted.json()).toEqual({ accepted: true });
-            expect(receivedParameters.slice(0, 5)).toEqual([42, true, 'strict', 1.5, 3]);
-
-            expect((await fetch(`${baseUrl}/widgets/42?mode=strict`)).status).toBe(400);
-            expect((await fetch(`${baseUrl}/widgets/42?enabled=not-a-boolean&mode=strict`)).status).toBe(400);
-            expect((await fetch(`${baseUrl}/jobs/job-1`, { method: 'DELETE' })).status).toBe(204);
-            expect((await fetch(`${baseUrl}/health`, { method: 'HEAD' })).status).toBe(204);
-            expect((await fetch(`${baseUrl}/health`, { method: 'OPTIONS' })).status).toBe(204);
-            expect(headCalled).toBe(true);
-            expect(optionsCalled).toBe(true);
-        } finally {
-            await app.close();
-        }
+        const compiledDir = compileGeneratedOutput(outputDir, true);
+        execFileSync(process.execPath, [
+            resolve(__dirname, 'helpers/controller-contract-runner.mjs'),
+            join(compiledDir, 'api', 'widgets.api.js')
+        ], { stdio: 'inherit' });
     }, 30_000);
 
     it('compiles DTOs strictly and enforces OpenAPI validation constraints', async () => {
@@ -315,7 +271,7 @@ describeIntegration('template integration', () => {
         expect(generatedModel).toContain(`readonly optionalSessionId?: UuidForOptionalSessionId;`);
         expect(generatedModel).toContain(`readonly relatedIds!: Array<UuidForRelatedIdsItem>;`);
 
-        compileGeneratedOutput(outputDir);
+        compileGeneratedOutput(outputDir, true);
     });
 
     it('generates OpenAPI 3.1 specs with local file references from absolute paths', () => {
