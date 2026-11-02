@@ -11,23 +11,24 @@
  */
 /* tslint:disable:no-unused-variable member-ordering */
 
-import { Controller, Get, Post, Put, Delete, Patch, UsePipes, ValidationPipe, Body, Param, Query, Headers, Req, Res } from "@nestjs/common";
+import * as Nest from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { UserDto } from '../model/user.dto';
 
-@Controller()
-@UsePipes(ValidationPipe)
+@Nest.Controller()
+@Nest.UsePipes(Nest.ValidationPipe)
 export abstract class UsersApi {
 
-  protected abstract getUsers(request?: Request, response?: Response): Array<UserDto> | Promise<Array<UserDto>>;
+  protected abstract getUsers(request: Request, response: Response): Array<UserDto> | Promise<Array<UserDto>>;
 
   
     /**
      * Get all users
      * 
      */
+    @Nest.HttpCode(200)
     @GetUsersPath()
-    private doGetUsers(@Req() request?: Request, @Res({ passthrough: true }) response?: Response): Array<UserDto> | Promise<Array<UserDto>> {
+    async doGetUsers(@Nest.Req() request: Request, @Nest.Res({ passthrough: true }) response: Response): Promise<Array<UserDto>> {
       return this.getUsers(request, response);
     }
 
@@ -38,6 +39,6 @@ export abstract class UsersApi {
 */
 function GetUsersPath(): MethodDecorator {
     const path: string = "/users".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
-    return Get(path);
+    return Nest.Get(path);
 }
 

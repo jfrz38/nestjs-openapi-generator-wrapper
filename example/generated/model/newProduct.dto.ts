@@ -11,32 +11,21 @@
  */
 
 
-import { 
-    IsBoolean,
-    IsDateString,
-    IsString,
-    IsOptional,
-    IsUUID,
-    IsNumber,
-    IsArray,
-    MinLength,
-    MaxLength,
-    Min,
-    Max,
-    IsEmail,
-    Matches,
-    ArrayMinSize,
-    ArrayMaxSize
-} from 'class-validator';
-import type { UUID } from 'node:crypto';
+import * as Validator from 'class-validator';
+
 
 interface INewProductDto { 
     name: string;
+
 }
 
+
+
 export class NewProductDto implements INewProductDto {
-    @IsString() 
-    readonly name: string;
+    @Validator.IsDefined() @Validator.IsString() 
+
+    readonly name!: string;
+
 
 }
 
