@@ -1,5 +1,6 @@
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('fs');
+const { createHash } = require('crypto');
+const { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
 const { join } = require('path');
 
@@ -7,6 +8,7 @@ const packageRoot = join(__dirname, '..');
 const packageJson = require(join(packageRoot, 'package.json'));
 const generatorConfig = require(join(packageRoot, 'openapitools.json'));
 const shouldGenerate = process.argv.includes('--generate');
+const artifactDirectory = process.env.PACKAGE_SMOKE_ARTIFACT_DIRECTORY;
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'nestjs-openapi-wrapper-package-'));
 const packDirectory = join(temporaryRoot, 'pack');
 const consumerDirectory = join(temporaryRoot, 'consumer');
@@ -104,7 +106,9 @@ try {
         'dist/templates/api.service.mustache',
         'dist/templates/model.mustache',
         'dist/templates/modelGeneric.mustache',
-        'dist/templates/modelGenericEnums.mustache'
+        'dist/templates/modelGenericEnums.mustache',
+        'dist/templates/modelPropertyType.mustache',
+        'dist/templates/modelValidationDecorators.mustache'
     ];
     for (const requiredFile of requiredFiles) {
         assert(packedFiles.includes(requiredFile), `Packed package is missing '${requiredFile}'.`);
@@ -162,6 +166,16 @@ try {
 
     runNpm(['run', 'smoke:cli', '--silent'], { cwd: consumerDirectory });
     if (shouldGenerate) runGenerationSmoke(installedPackageRoot);
+
+    if (artifactDirectory) {
+        mkdirSync(artifactDirectory, { recursive: true });
+        const retainedArchivePath = join(artifactDirectory, archive.filename);
+        copyFileSync(archivePath, retainedArchivePath);
+        const checksum = createHash('sha256').update(readFileSync(retainedArchivePath)).digest('hex');
+        writeFileSync(`${retainedArchivePath}.sha256`, `${checksum}  ${archive.filename}\n`);
+        console.log(`Retained verified package artifact at '${retainedArchivePath}'.`);
+    }
+
     console.log('Package smoke test passed.');
 } finally {
     execFileSync(process.execPath, [join(__dirname, 'stage-package-docs.js'), '--clean']);
