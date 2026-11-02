@@ -6,73 +6,111 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: create-release-main
+  cancel-in-progress: false
 
 jobs:
-  create-release:
+  verify-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: ./wrapper
-
+    timeout-minutes: 30
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7.0.1
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: wrapper/package.json
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
-          cache: 'pnpm'
+          cache: pnpm
           cache-dependency-path: wrapper/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: make install
 
-      - name: Build
-        run: pnpm build
+      - name: Build, test, and retain the verified package
+        env:
+          PACKAGE_SMOKE_ARTIFACT_DIRECTORY: ${{ runner.temp }}/npm-package
+        run: make test
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run integration tests
+        run: make test-integration
 
-      - name: Resolve release version
-        id: version
+      - name: Verify retained package checksum
+        working-directory: ${{ runner.temp }}/npm-package
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          if [ -z "$VERSION" ]; then
-            echo "Could not resolve package version" >&2
-            exit 1
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          test "$(find . -maxdepth 1 -name '*.tgz' -type f | wc -l)" -eq 1
+          test "$(find . -maxdepth 1 -name '*.sha256' -type f | wc -l)" -eq 1
+          sha256sum --check ./*.sha256
+
+      - name: Upload verified package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-package-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/npm-package/*.tgz
+            ${{ runner.temp }}/npm-package/*.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  create-release:
+    needs: verify-package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release tag target
+        id: release
+        working-directory: wrapper
+        run: node scripts/release-tag.js --package package.json --commit "$GITHUB_SHA" --repository ..
+
+      - name: Download verified package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-package-${{ github.sha }}
+          path: ${{ runner.temp }}/npm-package
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
         run: |
+          ARCHIVE="$(find "$RUNNER_TEMP/npm-package" -maxdepth 1 -name '*.tgz' -type f)"
+          CHECKSUM="$(find "$RUNNER_TEMP/npm-package" -maxdepth 1 -name '*.sha256' -type f)"
+
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; nothing to create."
+            ASSETS="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+            grep -Fxq "$(basename "$ARCHIVE")" <<< "$ASSETS"
+            grep -Fxq "$(basename "$CHECKSUM")" <<< "$ASSETS"
+            echo "Release $TAG already exists with its verified package assets."
             exit 0
           fi
 
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists but the GitHub release is missing; creating it."
-          else
-            git tag "$TAG"
-            git push origin "$TAG"
-          fi
-
-          gh release create "$TAG" \
+          gh release create "$TAG" "$ARCHIVE" "$CHECKSUM" \
             --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
             --title "$TAG" \
             --generate-notes

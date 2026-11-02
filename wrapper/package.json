@@ -1,6 +1,6 @@
 {
   "name": "@jfrz38/nestjs-open-api-generator-wrapper",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "peerDependencies": {
     "class-validator": ">=0.14.0"
   },
@@ -11,15 +11,33 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "nestjs-openapi-wrapper": "./dist/src/bin/generate.js"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
+  "bin": {
+    "nestjs-openapi-wrapper": "./dist/bin/generate.js"
+  },
+  "files": [
+    "dist",
+    "openapitools.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc && npm run copy-templates",
-    "copy-templates": "copyfiles -u 1 src/**/*.mustache dist/src",
-    "generate": "node ./dist/src/bin/generate.js",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/copy-runtime-assets.js",
+    "generate": "node ./dist/bin/generate.js",
     "prepare": "npm run build",
-    "test": "jest",
+    "stage:package-docs": "node scripts/stage-package-docs.js",
+    "postpublish": "node scripts/stage-package-docs.js --clean",
+    "test": "npm run test:unit && npm run test:package",
+    "test:unit": "jest --runInBand",
+    "test:package": "node scripts/package-smoke.js",
+    "test:compatibility": "node scripts/package-smoke.js --generate",
     "test-coverage": "jest --coverage"
   },
   "keywords": [
@@ -36,16 +54,25 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@openapitools/openapi-generator-cli": "2.40.1",
-    "commander": "15.0.0"
+    "@openapitools/openapi-generator-cli": "2.42.0",
+    "commander": "15.0.0",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
-    "@typescript/native": "npm:typescript@7.0.2",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/platform-express": "12.2.0",
+    "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.13.3",
-    "copyfiles": "2.4.1",
-    "jest": "30.4.2",
-    "ts-jest": "29.4.12",
+    "@types/node": "24.19.2",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "express": "5.3.0",
+    "jest": "30.5.2",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "ts-jest": "29.4.15",
     "ts-node": "10.9.2",
     "typescript": "npm:@typescript/typescript6@6.0.2"
   }

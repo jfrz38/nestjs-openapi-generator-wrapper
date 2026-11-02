@@ -1,12 +1,16 @@
 # Generation example
 
-This code from [`generated` folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example/generated) has been generated using the following command from the project root folder (where `package.json` exists):
+The code in the [`generated` folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example/generated) can be generated from the repository root with:
 
 ```bash
 npx @jfrz38/nestjs-open-api-generator-wrapper \
--i ../example/openapi.yml \
--o ../example/generated
+  -i ./example/openapi.yml \
+  -o ./example/generated \
+  --clean-output
 ```
+
+The `--clean-output` option removes obsolete files only after a successful
+generation.
 
 The command generates two folders:
 
@@ -19,7 +23,7 @@ To use this code in a NestJS application, just extend the generated controller i
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { UserApi } from '../some/path/to/generated/api/users.api';
+import { UsersApi } from '../some/path/to/generated/api/users.api';
 import { UserDto } from '../some/path/to/generated/model/user.dto';
 
 @Injectable()
@@ -48,7 +52,7 @@ Notes about [**generated controllers**](./generated/api/products.api.ts):
 - Controllers **automatically generate the routes**, so you don't need to decorate each method with the corresponding path. Your entire application entry-point is defined by OpenAPI and can't be implemented using a wrong path.
 - Controllers enforce **required fields** so they can never be neither `null` nor `undefined`.
 - Controllers use NestJS `ValidationPipe` so models are validated when they are created.
-- `Request` and `Response` are always optionals so there is no need to implement them if they are not going to be used.
+- `Request` and `Response` are required trailing parameters in the generated protected contract. An override can omit them when unused, as shown above.
 
 Notes about [**generated DTOs**](./generated/model/user.dto.ts):
 
@@ -61,7 +65,7 @@ As with the rest of this project, this section is entirely opinionated. So for m
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { UserApi } from './some/path/to/generated/api/users.api';
+import { UsersApi } from './some/path/to/generated/api/users.api';
 import { UserDto } from './some/path/to/generated/model/user.dto';
 
 @Injectable()
@@ -130,20 +134,23 @@ The abstract methods define the business contract you must implement,
 while the concrete methods handle **all HTTP-related concerns**.
 
 ```ts
-@Controller()
-@UsePipes(ValidationPipe)
+import * as Nest from '@nestjs/common';
+import type { Request, Response } from 'express';
+
+@Nest.Controller()
+@Nest.UsePipes(Nest.ValidationPipe)
 export abstract class UsersApi {
 
-  protected abstract getUsers(request?: Request, response?: Response): Array<UserDto> | Promise<Array<UserDto>>;
+  protected abstract getUsers(request: Request, response: Response): Array<UserDto> | Promise<Array<UserDto>>;
   
-    /**
-     * Get all users
-     * 
-     */
-    @GetUsersPath()
-    private doGetUsers(@Req() request?: Request, @Res({ passthrough: true }) response?: Response): Array<UserDto> | Promise<Array<UserDto>> {
-      return this.getUsers(request, response);
-    }
+  @Nest.HttpCode(200)
+  @GetUsersPath()
+  async doGetUsers(
+    @Nest.Req() request: Request,
+    @Nest.Res({ passthrough: true }) response: Response
+  ): Promise<Array<UserDto>> {
+    return this.getUsers(request, response);
+  }
 
 }
 ```
@@ -163,7 +170,7 @@ Generated files also include path decorators to keep routes fully aligned with t
 */
 function GetUsersPath(): MethodDecorator {
     const path: string = "/users".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
-    return Get(path);
+    return Nest.Get(path);
 }
 ```
 

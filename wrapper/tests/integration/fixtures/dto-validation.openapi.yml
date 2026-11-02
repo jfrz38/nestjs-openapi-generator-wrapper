@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: DTO Validation Integration Test
+  version: 1.0.0
+
+paths: {}
+
+components:
+  schemas:
+    PublicationStatus:
+      type: string
+      enum: [draft, published]
+
+    Child:
+      type: object
+      required: [name, age]
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+
+    ValidationSample:
+      type: object
+      required:
+        - count
+        - ratio
+        - status
+        - externalStatus
+        - labels
+        - modes
+        - scores
+        - child
+        - children
+        - patternValue
+        - nullableRequired
+      properties:
+        count:
+          type: integer
+        ratio:
+          type: number
+        status:
+          type: string
+          enum: [draft, published]
+        externalStatus:
+          $ref: '#/components/schemas/PublicationStatus'
+        labels:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [automatic, manual]
+        scores:
+          type: array
+          items:
+            type: integer
+        child:
+          $ref: '#/components/schemas/Child'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child'
+        patternValue:
+          type: string
+          pattern: '^[A-Z]+/[0-9]+$'
+        optionalName:
+          type: string
+        optionalNullable:
+          type: string
+          nullable: true
+        nullableRequired:
+          type: string
+          nullable: true
+
+    BaseRecord:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+
+    DerivedRecord:
+      allOf:
+        - $ref: '#/components/schemas/BaseRecord'
+        - type: object
+          required: [revision]
+          properties:
+            revision:
+              type: integer
+
+    DictionaryContainer:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: object
+          additionalProperties:
+            type: integer

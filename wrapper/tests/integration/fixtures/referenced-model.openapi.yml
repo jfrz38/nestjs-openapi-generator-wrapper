@@ -1,0 +1,23 @@
+openapi: 3.1.0
+info:
+  title: Referenced Model Integration Test
+  version: 1.0.0
+
+paths:
+  /payload:
+    get:
+      tags: [Payloads]
+      summary: Get a referenced payload
+      operationId: getReferencedPayload
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferencedPayload"
+
+components:
+  schemas:
+    ReferencedPayload:
+      $ref: "./referenced-payload.schema.yml"
