@@ -31,7 +31,7 @@ test-integration-keep: ## run integration test and preserve generated output
 
 .PHONY: generate-example
 generate-example: ## build the wrapper and generate example client code
-	cd $(CODE_PATH) && pnpm run build && node ./dist/bin/generate.js -i ../example/openapi.yml -o ../example/generated
+	cd $(CODE_PATH) && pnpm run build && node ./dist/bin/generate.js -i ../example/openapi.yml -o ../example/generated --clean-output
 
 .PHONY: clean-example-generated 
 clean-example-generated: ## remove generated example output

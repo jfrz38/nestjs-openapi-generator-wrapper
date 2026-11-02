@@ -11,16 +11,16 @@
  */
 /* tslint:disable:no-unused-variable member-ordering */
 
-import { Controller, Get, Post, Put, Delete, Patch, UsePipes, ValidationPipe, Body, Param, Query, Headers, Req, Res } from "@nestjs/common";
+import * as Nest from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { NewProductDto } from '../model/newProduct.dto';
 import { ProductDto } from '../model/product.dto';
 
-@Controller()
-@UsePipes(ValidationPipe)
+@Nest.Controller()
+@Nest.UsePipes(Nest.ValidationPipe)
 export abstract class ProductsApi {
 
-  protected abstract createProduct(newProductDto: NewProductDto, request?: Request, response?: Response): ProductDto | Promise<ProductDto>;
+  protected abstract createProduct(newProductDto: NewProductDto, request: Request, response: Response): ProductDto | Promise<ProductDto>;
 
   
     /**
@@ -28,10 +28,13 @@ export abstract class ProductsApi {
      * 
      * @param newProductDto 
      */
+    @Nest.HttpCode(201)
     @CreateProductPath()
-    private doCreateProduct(@Body() newProductDto: NewProductDto, @Req() request?: Request, @Res({ passthrough: true }) response?: Response): ProductDto | Promise<ProductDto> {
+    async doCreateProduct(@Nest.Body() 
+newProductDto: NewProductDto, @Nest.Req() request: Request, @Nest.Res({ passthrough: true }) response: Response): Promise<ProductDto> {
+      
         if (newProductDto === null || newProductDto === undefined) {
-            throw new Error('Required parameter newProductDto was null or undefined when calling createProduct.');
+            throw new Nest.BadRequestException('Required parameter newProductDto was null or undefined when calling createProduct.');
         }
 
       return this.createProduct(newProductDto, request, response);
@@ -44,6 +47,6 @@ export abstract class ProductsApi {
 */
 function CreateProductPath(): MethodDecorator {
     const path: string = "/products".replace(/\$\{encodeURIComponent\(\w+\((\w+)\)\)\}/g, ':$1');
-    return Post(path);
+    return Nest.Post(path);
 }
 
