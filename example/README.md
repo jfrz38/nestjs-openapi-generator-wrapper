@@ -1,13 +1,16 @@
 # Generation example
 
-The code in the [`generated` folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example/generated) is generated from the repository root with:
+The code in the [`generated` folder](https://github.com/jfrz38/nestjs-openapi-generator-wrapper/tree/develop/example/generated) can be generated from the repository root with:
 
 ```bash
-make generate-example
+npx @jfrz38/nestjs-open-api-generator-wrapper \
+  -i ./example/openapi.yml \
+  -o ./example/generated \
+  --clean-output
 ```
 
-The target builds the local package and uses `--clean-output`, so obsolete files
-are removed only after a successful generation.
+The `--clean-output` option removes obsolete files only after a successful
+generation.
 
 The command generates two folders:
 
