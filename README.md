@@ -153,6 +153,26 @@ Generator upgrades are intentional because a new Java generator version can chan
 4. Review all generated-output and integration-expectation changes before accepting them.
 5. Run `make generate-example` only after accepting the new output, then commit the configuration, tests, and intentional generated changes together.
 
+## Maintainer release process
+
+A push to `main` runs the package smoke test and the integration suite before a
+GitHub Release is created. The release workflow builds one npm tarball, verifies
+it from a clean consumer project, records its SHA-256 checksum, and attaches both
+files to the release. If the version tag already points to another commit, release
+creation fails instead of moving or reusing that tag.
+
+Publishing to npm is a separate manual workflow:
+
+1. Open the **Publish Release** workflow from `main`.
+2. Enter the explicit GitHub Release tag, such as `v1.2.3`.
+3. Approve the protected `npm` environment when prompted.
+
+The publication workflow downloads and verifies the release asset; it does not
+rebuild the package. npm therefore receives the exact tarball that passed the
+release checks. Publication uses npm trusted publishing with provenance, so the
+GitHub `npm` environment and the npm trusted publisher must both authorize
+`.github/workflows/npm_publish.yml` from `main`.
+
 ## Why I use it
 
 I created this wrapper with custom templates and classes because I was not satisfied with the default output of `openapi-generator`.
