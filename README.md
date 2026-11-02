@@ -45,7 +45,7 @@ This is intentionally closer to **Spring Boot-style contract enforcement** than 
 
 ## Main Features
 
-- Generates **controllers that implement interfaces**, enforcing all methods defined in the OpenAPI spec.
+- Generates **abstract NestJS controllers**, enforcing all methods defined in the OpenAPI spec.
 - Generates **models, DTOs, and routes** following a more modular and organized structure, avoiding the clutter typical of the default `openapi-generator` output among with validation.
 - Simple configuration: it is just necessary to specify the OpenAPI yaml definition folder and the destination folder.
 - Under the hood, it **still uses** `openapi-generator`, so the output is equivalent to running the generator (among custom templates) directly with the correct parameters—but much easier to use.
@@ -95,7 +95,7 @@ npm install -D @jfrz38/nestjs-open-api-generator-wrapper
 
 This wrapper is a development-time code generation tool, so it should be installed as a dev dependency.
 
-The package pins both parts of the generator toolchain: npm launcher `@openapitools/openapi-generator-cli` 2.41.0 and Java OpenAPI Generator 7.14.0. The wrapper always passes its packaged generator configuration explicitly, so an `openapitools.json` in the consuming project cannot change the Java generator version or be created as a generation side effect.
+The package pins both parts of the generator toolchain: npm launcher `@openapitools/openapi-generator-cli` 2.42.0 and Java OpenAPI Generator 7.14.0. The wrapper always passes its packaged generator configuration explicitly, so an `openapitools.json` in the consuming project cannot change the Java generator version or be created as a generation side effect.
 
 ## Usage
 
@@ -126,10 +126,10 @@ Allowed parameters are:
 | -------------------------------------- | ------------------------------------------- | --------- | ------------------ |
 | `-i, --input <spec>`                   | Path to OpenAPI spec file or folder         | **Yes**       | —                  |
 | `-o, --output <dir>`                   | Output directory for generated code         | **Yes**       | —                  |
-| `-t, --templates <dir>`                | Path to custom template directory           | No        | `api/generated/templates` |
+| `-t, --templates <dir>`                | Path to custom template directory           | No        | Templates bundled with the package |
 | `--additional-properties <properties>` | Pass additional properties to the generator | No        | `modelFileSuffix=.dto,modelSuffix=Dto,serviceFileSuffix=.api,serviceSuffix=Api`               |
 | `--global-property <property>`         | Set global properties for code generation   | No        | `apis,models`               |
-| `--ignore-file-override <path>`        | Path to an OpenAPI ignore file              | No        | `.openapi-generator-ignore`               |
+| `--ignore-file-override <path>`        | Path to an OpenAPI ignore file              | No        | Ignore file bundled with the package      |
 | `--clean-output`                         | Safely replace the output after successful generation | No       | `false` |
 
 Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
@@ -142,6 +142,33 @@ Also, default `.openapi-generator-ignore` ignore all except `api` and `model`:
 !api/
 !model/
 ```
+
+## Supported OpenAPI contract
+
+The integration suite covers OpenAPI 3.0.3 and OpenAPI 3.1.0 documents. Swagger
+2.0 is not part of the supported wrapper contract, even when the underlying
+generator can parse it.
+
+- HTTP operations: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and
+  `OPTIONS`. `TRACE` is rejected before generation.
+- Parameters: path, query, and header parameters are supported. Cookie
+  parameters are rejected because they require application-specific middleware.
+- Request bodies: JSON bodies are supported. `multipart/form-data` and
+  `application/x-www-form-urlencoded` are rejected before generation.
+- Responses: an operation may declare one concrete `2xx` response for the
+  generated static NestJS status. Multiple successful responses and wildcard
+  `2XX` responses are rejected.
+- Schemas: generated DTOs support typed `additionalProperties` maps and `allOf`
+  inheritance. Validation metadata is generated for inherited properties as
+  exposed by OpenAPI Generator.
+- Nested validation: `class-validator` validates nested DTO instances. Turning
+  plain JSON objects into those instances remains the consuming application's
+  responsibility.
+
+These are the tested wrapper guarantees, not the complete feature set of the
+underlying OpenAPI Generator. Generation fails early for the unsupported
+controller constructs listed above; other OpenAPI features may retain the
+behavior of the pinned `typescript-nestjs` generator.
 
 ## Upgrading OpenAPI Generator
 
@@ -219,11 +246,11 @@ You can use a Dockerfile like this when generating during image build:
 
 ```Dockerfile
 # STAGE 1: API Generation
-FROM openapitools/openapi-generator-cli AS generator
+FROM openapitools/openapi-generator-cli:v7.14.0 AS generator
 
-# Inject Node.js 24 from the official image to run the wrapper (install or upgrade node in openapitools container is not a good idea so we can "bring back" from another image that will be used later)
-COPY --from=node:24 /usr/local/bin/node /usr/local/bin/
-COPY --from=node:24 /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Inject the pinned Node.js toolchain used to run the wrapper
+COPY --from=node:24.11.0-bookworm-slim /usr/local/bin/node /usr/local/bin/
+COPY --from=node:24.11.0-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
@@ -231,7 +258,7 @@ WORKDIR /usr/src/app
 
 # Install dev-dependencies to access the wrapper
 COPY code/package*.json ./
-RUN npm install --only=dev --no-scripts
+RUN npm ci --include=dev --no-scripts
 
 # Copy API spec. This folder must contains openapi.yaml
 COPY api/ ./api
@@ -241,12 +268,12 @@ RUN npx @jfrz38/nestjs-open-api-generator-wrapper -i ./api/openapi.yaml -o ./gen
 
 
 # STAGE 2: Application Build
-FROM node:24 AS builder
+FROM node:24.11.0-bookworm-slim AS builder
 
 WORKDIR /usr/src/app
 
 COPY code/package*.json ./
-RUN npm install
+RUN npm ci
 COPY code/ ./
 
 # Sync the generated sources into the NestJS project
@@ -257,17 +284,16 @@ RUN npm run build
 
 
 # STAGE 3: Final production image
-FROM node:24-alpine
+FROM node:24.11.0-alpine3.22
 
 WORKDIR /usr/src/app
 
 # Since generator is already executed, only production dependencies are installed
 COPY code/package*.json ./
-RUN npm install --production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Bring back files from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 # Do whatever else you want
 # ...
