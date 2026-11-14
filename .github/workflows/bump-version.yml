@@ -36,9 +36,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump version
-        uses: jfrz38/version-bump-action@72e195a978a7b6b433b39bfef52d335b6fe609b6 # v0
+        uses: jfrz38/auto-version-bump-action@7a76804803c0ae5dc7c5d8d1ac7bfcf4fbbb4d6f # v0.4.0
         with:
           bump: ${{ inputs.bump }}
+          changelog: git-cliff
           strategy: npm
           version-file: wrapper/package.json
           base-branch: ${{ inputs.base_branch }}
